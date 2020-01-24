@@ -1,2 +1,7 @@
 # KMPJavaCompiler
-Java Compiler built during the course CS335A
+KMPJavaCompiler a.k.a Kumar-Malik-Pandey JavaCompiler.
+
+# Contributors
+  * Abhyuday Pandey
+  * Ayush Kumar
+  * Umang Malik
