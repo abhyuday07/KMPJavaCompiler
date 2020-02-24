@@ -841,26 +841,23 @@ assignmentExpression : conditionalExpression
                      | assignment
                      ;
 
-assignment : leftHandSide assignmentOperator expression
+assignment : leftHandSide '=' expression
+	| leftHandSide '*=' expression
+	| leftHandSide '/=' expression
+	| leftHandSide '%=' expression
+	| leftHandSide '+=' expression
+	| leftHandSide '-=' expression
+	| leftHandSide '<<=' expression
+	| leftHandSide '>>=' expression
+	| leftHandSide '>>>=' expression
+	| leftHandSide '&=' expression
+	| leftHandSide '^=' expression
+	| leftHandSide '|=' expression
         ;
 
 leftHandSide : expressionName
         | fieldAccess
         | arrayAccess
-        ;
-
-assignmentOperator : '='
-        | '*='
-        | '/='
-        | '%='
-        | '+='
-        | '-='
-        | '<<='
-        | '>>='
-        | '>>>='
-        | '&='
-        | '^='
-        | '|='
         ;
 
 conditionalExpression : conditionalOrExpression
