@@ -1,0 +1,2 @@
+antlr4 -no-listener -visitor -encoding UTF-8 -Dlanguage=Cpp Java8.g4                                                                                      ✘ 1 
+g++ -std=c++11 Java8Main.cpp Java8Parser.cpp Java8Lexer.cpp -lantlr4-runtime -lgvc -lcdt -lcgraph -I/usr/local/include/antlr4-runtime
