@@ -171,8 +171,6 @@ int main(int argc, const char* argvchar[]) {
         std::cerr<<parser.getNumberOfSyntaxErrors() + lexer.getNumberOfSyntaxErrors()<<" syntax error(s) found\n";
         return -1;
     }
-    std::cerr<<parser.getNumberOfSyntaxErrors()<<std::endl;
-    std::cerr<<lexer.getNumberOfSyntaxErrors()<<std::endl;
     if (verbose) {std::cout << "Constructing ParseTree..." << std::endl;}
     if (verbose) {std::cout << "ParseTree successfully constructed." << std::endl;}
     if (verbose) {std::cout << "Constructing AbstractSyntaxTree..." << std::endl;}
