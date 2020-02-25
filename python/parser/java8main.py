@@ -67,6 +67,7 @@ def deepCopy(old_root, par):
 			deepCopy(child, new_rootnode)
 	return new_rootnode
 
+'''
 def createAST(root, parent):
 	is_skipnode = (root.getChildCount() == 1) and isinstance(root.getChild(0), antlr4.ParserRuleContext)
 	if not is_skipnode:
@@ -78,7 +79,29 @@ def createAST(root, parent):
 		if isinstance(child, antlr4.RuleContext):
 			createAST(child, newnode)
 	return newnode
+'''
 
+def createAST(root, parent):
+	if isinstance(root, antlr4.TerminalNode):
+		newnode = AST_Node(root.getText(), "Identifier", parent)
+		return newnode
+
+	is_skipnode = False
+	if root.getChildCount() == 1:
+		if isinstance(root.getChild(0), antlr4.ParserRuleContext):
+			is_skipnode = True
+		elif (isinstance(root.getChild(0), antlr4.TerminalNode) and java8Lexer.symbolicNames[root.getChild(0).symbol.type] == "Identifier"):
+			is_skipnode = True
+
+	if not is_skipnode:
+		node_type = java8Parser.ruleNames[root.getRuleIndex()]
+		newnode = AST_Node(root.getText(), node_type, parent)
+	else:
+		newnode = parent
+	for child in root.getChildren():
+		if isinstance(child, antlr4.RuleContext) or java8Lexer.symbolicNames[child.symbol.type] == "Identifier":  #Manually call createAST if child is identifier
+			createAST(child, newnode)
+	return newnode
 
 
 def compressTree(root):

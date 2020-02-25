@@ -38,16 +38,38 @@ public:
 int AST_Node::num_nodes = 0;
 std::vector<AST_Node*> AST_Node::nodes;
 
-AST_Node* createAST(antlr4::RuleContext* root, AST_Node* par, Java8Parser& parser) {
-    bool is_skipnode = (root->children.size() == 1) && dynamic_cast<antlr4::ParserRuleContext*>(root->children[0]);
+AST_Node* createAST(antlr4::tree::ParseTree* root, AST_Node* par, Java8Parser& parser, Java8Lexer& lexer) {
     AST_Node* newnode = par;
+    if (dynamic_cast<antlr4::tree::TerminalNode*>(root)) {
+        newnode = new AST_Node(root->getText(), "Identifier", par);
+        return newnode;
+    }
+    bool is_skipnode = false;
+    if (root->children.size() == 1) {
+        if (dynamic_cast<antlr4::ParserRuleContext*>(root->children[0])) {
+            is_skipnode = true;
+        } else if (dynamic_cast<antlr4::tree::TerminalNode*>(root->children[0])) {
+            std::string symbolname = 
+                lexer.getVocabulary().getSymbolicName(dynamic_cast<antlr4::tree::TerminalNode*>(root->children[0])->getSymbol()->getType());
+            std::cout << symbolname << std::endl;
+            if (!symbolname.compare("Identifier")) {
+                is_skipnode = true;
+            }
+        }
+    }
     if (!is_skipnode) {
-		std::string type = parser.getRuleNames()[root->getRuleIndex()];
+		std::string type = parser.getRuleNames()[dynamic_cast<antlr4::ParserRuleContext*>(root)->getRuleIndex()];
 		newnode = new AST_Node(root->getText(), type, par);
     }
 	for (antlr4::tree::ParseTree* child : root->children) {
-		if (dynamic_cast<antlr4::RuleContext*>(child)) {
-			createAST(dynamic_cast<antlr4::RuleContext*>(child), newnode, parser);
+		if (dynamic_cast<antlr4::ParserRuleContext*>(child)) {
+			createAST(child, newnode, parser, lexer);
+        } else if (dynamic_cast<antlr4::tree::TerminalNodeImpl*>(child)) {
+            std::string symbolname = 
+                lexer.getVocabulary().getSymbolicName(dynamic_cast<antlr4::tree::TerminalNodeImpl*>(child)->getSymbol()->getType());
+            if (!symbolname.compare("Identifier")) {
+                createAST(child, newnode, parser, lexer);
+            }
         }
     }
 	return newnode;
@@ -71,9 +93,9 @@ int main(int argc, const char* argv[]) {
     antlr4::ANTLRInputStream input(stream);
     Java8Lexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
-    Java8Parser parser(&tokens);    
-    antlr4::RuleContext* tree = parser.compilationUnit();
-    AST_Node* ast = createAST(tree, NULL, parser);
+    Java8Parser parser(&tokens);   
+    antlr4::tree::ParseTree* tree = parser.compilationUnit();
+    AST_Node* ast = createAST(tree, NULL, parser, lexer);
 
     //create and render the graph
     char astgraph_name[] = "Abstract Syntax Tree";
