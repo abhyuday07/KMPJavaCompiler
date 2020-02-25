@@ -841,19 +841,10 @@ assignmentExpression : conditionalExpression
                      | assignment
                      ;
 
-assignment : leftHandSide '=' expression
-	| leftHandSide '*=' expression
-	| leftHandSide '/=' expression
-	| leftHandSide '%=' expression
-	| leftHandSide '+=' expression
-	| leftHandSide '-=' expression
-	| leftHandSide '<<=' expression
-	| leftHandSide '>>=' expression
-	| leftHandSide '>>>=' expression
-	| leftHandSide '&=' expression
-	| leftHandSide '^=' expression
-	| leftHandSide '|=' expression
+assignment : leftHandSide assignmentOperator expression
         ;
+
+assignmentOperator : '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '>>>=' | '&=' | '^=' | '|=' ;
 
 leftHandSide : expressionName
         | fieldAccess

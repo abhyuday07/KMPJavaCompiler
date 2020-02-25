@@ -14,14 +14,15 @@ private:
     int id;
     std::string text;
     std::string type;
+    int rulenumber;
     std::vector<AST_Node*> children;
     AST_Node* parent;
 public:
     static int num_nodes;
     static std::vector<AST_Node*> nodes;
 
-    AST_Node(const std::string& tx, const std::string& tp, AST_Node* par): 
-        id(AST_Node::num_nodes), text(tx), type(tp), parent(par) {
+    AST_Node(const std::string& tx, const std::string& tp, int rn, AST_Node* par): 
+        id(AST_Node::num_nodes), text(tx), type(tp), rulenumber(rn), parent(par) {
         AST_Node::num_nodes++;
         if (par) {par->addChild(this);}
         AST_Node::nodes.push_back(this);
@@ -32,7 +33,7 @@ public:
     const std::string& getText() {return this->text;}
     const std::string& getType() {return this->type;}
     const std::vector<AST_Node*>& getChildren() {return this->children;}
-
+    int getRuleNumber() {return this->rulenumber;}
 };
 
 int AST_Node::num_nodes = 0;
@@ -40,8 +41,25 @@ std::vector<AST_Node*> AST_Node::nodes;
 
 AST_Node* createAST(antlr4::tree::ParseTree* root, AST_Node* par, Java8Parser& parser, Java8Lexer& lexer) {
     AST_Node* newnode = par;
+    // handling the special case of assignment
+    if (dynamic_cast<antlr4::ParserRuleContext*>(root)) {
+        std::string type = parser.getRuleNames()[dynamic_cast<antlr4::ParserRuleContext*>(root)->getRuleIndex()];
+        if (!type.compare("assignment")) {
+            // this is an assignment rule hence it must have 3 children
+            // also the second child should be of type assignment operator
+            assert(root->children.size() == 3);
+            int rulenumber = dynamic_cast<antlr4::ParserRuleContext*>(root->children[1])->getRuleIndex();
+            std::string child1_type = parser.getRuleNames()[rulenumber];
+            newnode = new AST_Node(root->children[1]->getText(), type, rulenumber, par);
+            for (int i : {0, 2}) {
+                // processing child i
+                createAST(root->children[i], newnode, parser, lexer);
+            }
+            return newnode;
+        }
+    }
     if (dynamic_cast<antlr4::tree::TerminalNode*>(root)) {
-        newnode = new AST_Node(root->getText(), "Identifier", par);
+        newnode = new AST_Node(root->getText(), "Identifier", -1, par);
         return newnode;
     }
     bool is_skipnode = false;
@@ -51,15 +69,15 @@ AST_Node* createAST(antlr4::tree::ParseTree* root, AST_Node* par, Java8Parser& p
         } else if (dynamic_cast<antlr4::tree::TerminalNode*>(root->children[0])) {
             std::string symbolname = 
                 lexer.getVocabulary().getSymbolicName(dynamic_cast<antlr4::tree::TerminalNode*>(root->children[0])->getSymbol()->getType());
-            std::cout << symbolname << std::endl;
             if (!symbolname.compare("Identifier")) {
                 is_skipnode = true;
             }
         }
     }
     if (!is_skipnode) {
-		std::string type = parser.getRuleNames()[dynamic_cast<antlr4::ParserRuleContext*>(root)->getRuleIndex()];
-		newnode = new AST_Node(root->getText(), type, par);
+        int rulenumber = dynamic_cast<antlr4::ParserRuleContext*>(root)->getRuleIndex();
+		std::string type = parser.getRuleNames()[rulenumber];
+		newnode = new AST_Node(root->getText(), type, rulenumber, par);
     }
 	for (antlr4::tree::ParseTree* child : root->children) {
 		if (dynamic_cast<antlr4::ParserRuleContext*>(child)) {
@@ -76,7 +94,14 @@ AST_Node* createAST(antlr4::tree::ParseTree* root, AST_Node* par, Java8Parser& p
 }
 
 Agnode_t* createGraph(AST_Node* root, Agraph_t* g) {
-    std::string tmp = root->getText() + '\n' + root->getType() + " (" + std::to_string(root->getId()) + ')';
+    std::string tmp;
+    if (root->getChildren().size() == 0) {
+        // this is a terminal node
+        tmp = root->getText() + '\n' + root->getType() + " (" + std::to_string(root->getId()) + ')';
+    } else {
+        // this is a nonterminal node
+        tmp = std::to_string(root->getRuleNumber()) + ". " + root->getType() + " (" + std::to_string(root->getId()) + ')';
+    }
     char* nodename = new char[tmp.size()+1];
     strcpy(nodename, tmp.c_str());
     Agnode_t* parnode = agnode(g, nodename, 1);

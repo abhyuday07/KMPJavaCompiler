@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-TARGET := javaparser
+TARGET := myASTGenerator
 OBJS := main.o Java8Lexer.o Java8Parser.o
 EXTRAS := Java8.interp Java8.tokens Java8BaseVisitor.cpp Java8BaseVisitor.h 
 EXTRAS += Java8Lexer.interp Java8Lexer.tokens Java8Visitor.cpp Java8Visitor.h

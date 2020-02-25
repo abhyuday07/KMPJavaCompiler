@@ -867,6 +867,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitAssignmentOperator(Java8Parser::AssignmentOperatorContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitLeftHandSide(Java8Parser::LeftHandSideContext *ctx) override {
     return visitChildren(ctx);
   }

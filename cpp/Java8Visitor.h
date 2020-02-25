@@ -445,6 +445,8 @@ public:
 
     virtual antlrcpp::Any visitAssignment(Java8Parser::AssignmentContext *context) = 0;
 
+    virtual antlrcpp::Any visitAssignmentOperator(Java8Parser::AssignmentOperatorContext *context) = 0;
+
     virtual antlrcpp::Any visitLeftHandSide(Java8Parser::LeftHandSideContext *context) = 0;
 
     virtual antlrcpp::Any visitConditionalExpression(Java8Parser::ConditionalExpressionContext *context) = 0;

@@ -112,16 +112,16 @@ public:
     RuleArrayCreationExpression = 203, RuleDimExprs = 204, RuleDimExpr = 205, 
     RuleExpression = 206, RuleLambdaExpression = 207, RuleLambdaParameters = 208, 
     RuleInferredFormalParameterList = 209, RuleLambdaBody = 210, RuleAssignmentExpression = 211, 
-    RuleAssignment = 212, RuleLeftHandSide = 213, RuleConditionalExpression = 214, 
-    RuleConditionalOrExpression = 215, RuleConditionalAndExpression = 216, 
-    RuleInclusiveOrExpression = 217, RuleExclusiveOrExpression = 218, RuleAndExpression = 219, 
-    RuleEqualityExpression = 220, RuleRelationalExpression = 221, RuleShiftExpression = 222, 
-    RuleAdditiveExpression = 223, RuleMultiplicativeExpression = 224, RuleUnaryExpression = 225, 
-    RulePreIncrementExpression = 226, RulePreDecrementExpression = 227, 
-    RuleUnaryExpressionNotPlusMinus = 228, RulePostfixExpression = 229, 
-    RulePostIncrementExpression = 230, RulePostIncrementExpression__1__postfixExpression = 231, 
-    RulePostDecrementExpression = 232, RulePostDecrementExpression__1__postfixExpression = 233, 
-    RuleCastExpression = 234, RuleConstantExpression = 235
+    RuleAssignment = 212, RuleAssignmentOperator = 213, RuleLeftHandSide = 214, 
+    RuleConditionalExpression = 215, RuleConditionalOrExpression = 216, 
+    RuleConditionalAndExpression = 217, RuleInclusiveOrExpression = 218, 
+    RuleExclusiveOrExpression = 219, RuleAndExpression = 220, RuleEqualityExpression = 221, 
+    RuleRelationalExpression = 222, RuleShiftExpression = 223, RuleAdditiveExpression = 224, 
+    RuleMultiplicativeExpression = 225, RuleUnaryExpression = 226, RulePreIncrementExpression = 227, 
+    RulePreDecrementExpression = 228, RuleUnaryExpressionNotPlusMinus = 229, 
+    RulePostfixExpression = 230, RulePostIncrementExpression = 231, RulePostIncrementExpression__1__postfixExpression = 232, 
+    RulePostDecrementExpression = 233, RulePostDecrementExpression__1__postfixExpression = 234, 
+    RuleCastExpression = 235, RuleConstantExpression = 236
   };
 
   Java8Parser(antlr4::TokenStream *input);
@@ -347,6 +347,7 @@ public:
   class LambdaBodyContext;
   class AssignmentExpressionContext;
   class AssignmentContext;
+  class AssignmentOperatorContext;
   class LeftHandSideContext;
   class ConditionalExpressionContext;
   class ConditionalOrExpressionContext;
@@ -3893,8 +3894,21 @@ public:
     AssignmentContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     LeftHandSideContext *leftHandSide();
-    antlr4::tree::TerminalNode *ASSIGN();
+    AssignmentOperatorContext *assignmentOperator();
     ExpressionContext *expression();
+
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  AssignmentContext* assignment();
+
+  class  AssignmentOperatorContext : public antlr4::ParserRuleContext {
+  public:
+    AssignmentOperatorContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ASSIGN();
     antlr4::tree::TerminalNode *MUL_ASSIGN();
     antlr4::tree::TerminalNode *DIV_ASSIGN();
     antlr4::tree::TerminalNode *MOD_ASSIGN();
@@ -3912,7 +3926,7 @@ public:
    
   };
 
-  AssignmentContext* assignment();
+  AssignmentOperatorContext* assignmentOperator();
 
   class  LeftHandSideContext : public antlr4::ParserRuleContext {
   public:
