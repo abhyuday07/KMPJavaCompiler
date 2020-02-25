@@ -118,7 +118,7 @@ Agnode_t* createGraph(AST_Node* root, Agraph_t* g) {
 int main(int argc, const char* argv[]) {
     bool verbose = true;
     std::ifstream stream;
-    stream.open(argv[1]);
+    stream.open(inputfile.c_str());
     antlr4::ANTLRInputStream input(stream);
     if (verbose) {std::cout << "Parsing program..." << std::endl;}
     Java8Lexer lexer(&input);
@@ -144,10 +144,10 @@ int main(int argc, const char* argv[]) {
     //gvParseArgs(gvc, argc, argv);
     gvLayout(gvc, astgraph, "dot");
     if (verbose) {std::cout << "Rendering Graph..." << std::endl;}
-    gvRenderFilename(gvc, astgraph, "dot", "graph.gv");
+    gvRenderFilename(gvc, astgraph, "dot", outputfile.c_str());
     if (verbose) {std::cout << "Graph successfully rendered." << std::endl;}
-    system("dot -Tpdf graph.gv >| graph.pdf");
-    system("rm -f graph.gv");
+    // system("dot -Tpdf graph.gv >| graph.pdf");
+    // system("rm -f graph.gv");
     gvFreeLayout(gvc, astgraph);
     agclose(astgraph);
     return 0;
