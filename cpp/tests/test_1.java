@@ -13,6 +13,10 @@ public class UnsortedHashSet<E> {
     }
     
     public boolean add(E obj) {
+        int a = 2;
+        int b;
+        b *= a;
+        b /= a;
         int oldSize = size;
         int index = Math.abs(obj.hashCode()) % con.length;
         if(con[index] == null)

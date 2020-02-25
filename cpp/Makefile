@@ -24,7 +24,7 @@ Java8Parser.o : Java8Parser.cpp Java8Parser.h
 	@${CC} ${CPPFLAGS} ${INCLUDEPATH} -c Java8Parser.cpp
 
 Java8Lexer.cpp Java8Parser.cpp Java8Lexer.h Java8Parser.h : Java8.g4
-	@${ANTLR} ${ANTLRFLAGS} Java8.g4
+	# @${ANTLR} ${ANTLRFLAGS} Java8.g4
 	
 clean : 
 	@rm -f ${OBJS} ${EXTRAS} Java8Lexer.cpp Java8Parser.cpp Java8Lexer.h Java8Parser.h ${TARGET}

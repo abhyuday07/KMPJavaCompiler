@@ -52,7 +52,7 @@ AST_Node* createAST(antlr4::tree::ParseTree* root, AST_Node* par, bool verbose, 
             assert(root->children.size() == 3);
             int rulenumber = dynamic_cast<antlr4::ParserRuleContext*>(root->children[1])->getRuleIndex();
             std::string child1_type = parser.getRuleNames()[rulenumber];
-            newnode = new AST_Node(root->children[1]->getText(), type, rulenumber, par);
+            newnode = new AST_Node(root->getText(), type + " " + root->children[1]->getText(), rulenumber, par);
             for (int i : {0, 2}) {
                 // processing child i
                 createAST(root->children[i], newnode, verbose, parser, lexer);
@@ -115,8 +115,48 @@ Agnode_t* createGraph(AST_Node* root, Agraph_t* g) {
     return parnode;
 }
 
-int main(int argc, const char* argv[]) {
-    bool verbose = true;
+int main(int argc, const char* argvchar[]) {
+    /* HANDLE COMMAND LINE FLAGS */
+    std::string argv[argc];
+    for(int i=0;i<argc;i++) argv[i] = argvchar[i];
+    std::string inputfile="", outputfile="";
+    bool verbose = false;
+    if(argc == 1) std::cerr<<"Use -help for help\n";
+    for(int i=1; i<argc; i++){
+        if(argv[i].compare("-verbose") == 0){
+            verbose = true;
+        } else if(argv[i].substr(0,6).compare("-input") == 0){
+            if(argv[i].length() > 6 && argv[i][6] == '='){
+                inputfile = argv[i].substr(7);
+            } else if(i<argc-1) {
+                inputfile = argv[i+1];
+                i++;
+            } else {
+                std::cerr<<"Invalid input file.\n"; exit(-1);
+            }
+        } else if(argv[i].substr(0,4).compare("-out") == 0) {
+            if(argv[i].length() > 4 && argv[i][4] == '='){
+                outputfile = argv[i].substr(5);
+            } else if(i<argc-1) {
+                outputfile = argv[i+1];
+                i++;
+            } else {
+                std::cerr<<"Invalid output file\n"; exit(-1);
+            }
+        } else if(argv[i].compare("-help") == 0){
+            std::cerr<<"Run as: ./myASTGenerator -input=in.java -out=out.dot [-verbose]\n";
+            exit(0);
+        } else {
+            std::cerr<<"Invalid command line parameter: "<<argv[i]<<"\n"; exit(-1);
+        }
+    }
+    if(inputfile.length() == 0 || outputfile.length() == 0) {
+        std::cerr<<"Please specify input an output files. Use -help for usage\n";
+        exit(-1);
+    }
+    
+
+
     std::ifstream stream;
     stream.open(inputfile.c_str());
     antlr4::ANTLRInputStream input(stream);
@@ -124,9 +164,16 @@ int main(int argc, const char* argv[]) {
     Java8Lexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
     Java8Parser parser(&tokens);
+    
     if (verbose) {std::cout << "Parsing complete." << std::endl;}
-    if (verbose) {std::cout << "Constructing ParseTree..." << std::endl;}
     antlr4::tree::ParseTree* tree = parser.compilationUnit();
+    if(parser.getNumberOfSyntaxErrors() + lexer.getNumberOfSyntaxErrors() > 0){
+        std::cerr<<parser.getNumberOfSyntaxErrors() + lexer.getNumberOfSyntaxErrors()<<" syntax error(s) found\n";
+        return -1;
+    }
+    std::cerr<<parser.getNumberOfSyntaxErrors()<<std::endl;
+    std::cerr<<lexer.getNumberOfSyntaxErrors()<<std::endl;
+    if (verbose) {std::cout << "Constructing ParseTree..." << std::endl;}
     if (verbose) {std::cout << "ParseTree successfully constructed." << std::endl;}
     if (verbose) {std::cout << "Constructing AbstractSyntaxTree..." << std::endl;}
     AST_Node* ast = createAST(tree, NULL, verbose, parser, lexer);
@@ -141,7 +188,6 @@ int main(int argc, const char* argv[]) {
     /* set up a graphviz context */
     GVC_t* gvc = gvContext();
     /* parse command line args - minimally argv[0] sets layout engine */
-    //gvParseArgs(gvc, argc, argv);
     gvLayout(gvc, astgraph, "dot");
     if (verbose) {std::cout << "Rendering Graph..." << std::endl;}
     gvRenderFilename(gvc, astgraph, "dot", outputfile.c_str());
