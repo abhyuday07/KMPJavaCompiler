@@ -1,7 +1,7 @@
 import antlr4
-from java8Lexer import java8Lexer
-from java8Parser import java8Parser
-from java8Visitor import java8Visitor
+from java8parser.java8Lexer import java8Lexer
+from java8parser.java8Parser import java8Parser
+from java8parser.java8Visitor import java8Visitor
 from graphviz import Digraph
 
 
@@ -145,4 +145,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-

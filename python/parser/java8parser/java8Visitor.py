@@ -19,28 +19,28 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primitiveType.
-    def visitPrimitiveType(self, ctx:java8Parser.PrimitiveTypeContext):
+    # Visit a parse tree produced by java8Parser#primitivetype.
+    def visitPrimitivetype(self, ctx:java8Parser.PrimitivetypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#numericType.
-    def visitNumericType(self, ctx:java8Parser.NumericTypeContext):
+    # Visit a parse tree produced by java8Parser#numerictype.
+    def visitNumerictype(self, ctx:java8Parser.NumerictypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#integralType.
-    def visitIntegralType(self, ctx:java8Parser.IntegralTypeContext):
+    # Visit a parse tree produced by java8Parser#integraltype.
+    def visitIntegraltype(self, ctx:java8Parser.IntegraltypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#floatingPointType.
-    def visitFloatingPointType(self, ctx:java8Parser.FloatingPointTypeContext):
+    # Visit a parse tree produced by java8Parser#floatingPointtype.
+    def visitFloatingPointtype(self, ctx:java8Parser.FloatingPointtypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#referenceType.
-    def visitReferenceType(self, ctx:java8Parser.ReferenceTypeContext):
+    # Visit a parse tree produced by java8Parser#referencetype.
+    def visitReferencetype(self, ctx:java8Parser.ReferencetypeContext):
         return self.visitChildren(ctx)
 
 
@@ -49,33 +49,33 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#classType.
-    def visitClassType(self, ctx:java8Parser.ClassTypeContext):
+    # Visit a parse tree produced by java8Parser#classtype.
+    def visitClasstype(self, ctx:java8Parser.ClasstypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#classType_lf_classOrInterfaceType.
-    def visitClassType_lf_classOrInterfaceType(self, ctx:java8Parser.ClassType_lf_classOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#classType__1__classOrInterfaceType.
+    def visitClassType__1__classOrInterfaceType(self, ctx:java8Parser.ClassType__1__classOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#classType_lfno_classOrInterfaceType.
-    def visitClassType_lfno_classOrInterfaceType(self, ctx:java8Parser.ClassType_lfno_classOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#classType__2__classOrInterfaceType.
+    def visitClassType__2__classOrInterfaceType(self, ctx:java8Parser.ClassType__2__classOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#interfaceType.
-    def visitInterfaceType(self, ctx:java8Parser.InterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#interfacetype.
+    def visitInterfacetype(self, ctx:java8Parser.InterfacetypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#interfaceType_lf_classOrInterfaceType.
-    def visitInterfaceType_lf_classOrInterfaceType(self, ctx:java8Parser.InterfaceType_lf_classOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#interfaceType__1__classOrInterfaceType.
+    def visitInterfaceType__1__classOrInterfaceType(self, ctx:java8Parser.InterfaceType__1__classOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#interfaceType_lfno_classOrInterfaceType.
-    def visitInterfaceType_lfno_classOrInterfaceType(self, ctx:java8Parser.InterfaceType_lfno_classOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#interfaceType__2__classOrInterfaceType.
+    def visitInterfaceType__2__classOrInterfaceType(self, ctx:java8Parser.InterfaceType__2__classOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
@@ -84,8 +84,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#arrayType.
-    def visitArrayType(self, ctx:java8Parser.ArrayTypeContext):
+    # Visit a parse tree produced by java8Parser#arraytype.
+    def visitArraytype(self, ctx:java8Parser.ArraytypeContext):
         return self.visitChildren(ctx)
 
 
@@ -139,33 +139,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#packageName.
-    def visitPackageName(self, ctx:java8Parser.PackageNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#typeName.
-    def visitTypeName(self, ctx:java8Parser.TypeNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#packageOrTypeName.
-    def visitPackageOrTypeName(self, ctx:java8Parser.PackageOrTypeNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#expressionName.
-    def visitExpressionName(self, ctx:java8Parser.ExpressionNameContext):
+    # Visit a parse tree produced by java8Parser#name.
+    def visitName(self, ctx:java8Parser.NameContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by java8Parser#methodName.
     def visitMethodName(self, ctx:java8Parser.MethodNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#ambiguousName.
-    def visitAmbiguousName(self, ctx:java8Parser.AmbiguousNameContext):
         return self.visitChildren(ctx)
 
 
@@ -189,8 +169,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#singleTypeImportDeclaration.
-    def visitSingleTypeImportDeclaration(self, ctx:java8Parser.SingleTypeImportDeclarationContext):
+    # Visit a parse tree produced by java8Parser#singletypeImportDeclaration.
+    def visitSingletypeImportDeclaration(self, ctx:java8Parser.SingletypeImportDeclarationContext):
         return self.visitChildren(ctx)
 
 
@@ -219,13 +199,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#normalClassDeclaration.
-    def visitNormalClassDeclaration(self, ctx:java8Parser.NormalClassDeclarationContext):
+    # Visit a parse tree produced by java8Parser#normalclassDeclaration.
+    def visitNormalclassDeclaration(self, ctx:java8Parser.NormalclassDeclarationContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#classModifier.
-    def visitClassModifier(self, ctx:java8Parser.ClassModifierContext):
+    # Visit a parse tree produced by java8Parser#modifier.
+    def visitModifier(self, ctx:java8Parser.ModifierContext):
         return self.visitChildren(ctx)
 
 
@@ -249,8 +229,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#interfaceTypeList.
-    def visitInterfaceTypeList(self, ctx:java8Parser.InterfaceTypeListContext):
+    # Visit a parse tree produced by java8Parser#interfacetypeList.
+    def visitInterfacetypeList(self, ctx:java8Parser.InterfacetypeListContext):
         return self.visitChildren(ctx)
 
 
@@ -274,11 +254,6 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#fieldModifier.
-    def visitFieldModifier(self, ctx:java8Parser.FieldModifierContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#variableDeclaratorList.
     def visitVariableDeclaratorList(self, ctx:java8Parser.VariableDeclaratorListContext):
         return self.visitChildren(ctx)
@@ -299,8 +274,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannType.
-    def visitUnannType(self, ctx:java8Parser.UnannTypeContext):
+    # Visit a parse tree produced by java8Parser#unanntype.
+    def visitUnanntype(self, ctx:java8Parser.UnanntypeContext):
         return self.visitChildren(ctx)
 
 
@@ -309,8 +284,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannReferenceType.
-    def visitUnannReferenceType(self, ctx:java8Parser.UnannReferenceTypeContext):
+    # Visit a parse tree produced by java8Parser#unannReferencetype.
+    def visitUnannReferencetype(self, ctx:java8Parser.UnannReferencetypeContext):
         return self.visitChildren(ctx)
 
 
@@ -324,13 +299,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannClassType_lf_unannClassOrInterfaceType.
-    def visitUnannClassType_lf_unannClassOrInterfaceType(self, ctx:java8Parser.UnannClassType_lf_unannClassOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#unannClassType__1__unannClassOrInterfaceType.
+    def visitUnannClassType__1__unannClassOrInterfaceType(self, ctx:java8Parser.UnannClassType__1__unannClassOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannClassType_lfno_unannClassOrInterfaceType.
-    def visitUnannClassType_lfno_unannClassOrInterfaceType(self, ctx:java8Parser.UnannClassType_lfno_unannClassOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#unannClassType__2__unannClassOrInterfaceType.
+    def visitUnannClassType__2__unannClassOrInterfaceType(self, ctx:java8Parser.UnannClassType__2__unannClassOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
@@ -339,33 +314,28 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannInterfaceType_lf_unannClassOrInterfaceType.
-    def visitUnannInterfaceType_lf_unannClassOrInterfaceType(self, ctx:java8Parser.UnannInterfaceType_lf_unannClassOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#unannInterfaceType__1__unannClassOrInterfaceType.
+    def visitUnannInterfaceType__1__unannClassOrInterfaceType(self, ctx:java8Parser.UnannInterfaceType__1__unannClassOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannInterfaceType_lfno_unannClassOrInterfaceType.
-    def visitUnannInterfaceType_lfno_unannClassOrInterfaceType(self, ctx:java8Parser.UnannInterfaceType_lfno_unannClassOrInterfaceTypeContext):
+    # Visit a parse tree produced by java8Parser#unannInterfaceType__2__unannClassOrInterfaceType.
+    def visitUnannInterfaceType__2__unannClassOrInterfaceType(self, ctx:java8Parser.UnannInterfaceType__2__unannClassOrInterfaceTypeContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannTypeVariable.
-    def visitUnannTypeVariable(self, ctx:java8Parser.UnannTypeVariableContext):
+    # Visit a parse tree produced by java8Parser#unanntypeVariable.
+    def visitUnanntypeVariable(self, ctx:java8Parser.UnanntypeVariableContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#unannArrayType.
-    def visitUnannArrayType(self, ctx:java8Parser.UnannArrayTypeContext):
+    # Visit a parse tree produced by java8Parser#unannArraytype.
+    def visitUnannArraytype(self, ctx:java8Parser.UnannArraytypeContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by java8Parser#methodDeclaration.
     def visitMethodDeclaration(self, ctx:java8Parser.MethodDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#methodModifier.
-    def visitMethodModifier(self, ctx:java8Parser.MethodModifierContext):
         return self.visitChildren(ctx)
 
 
@@ -419,13 +389,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#exceptionTypeList.
-    def visitExceptionTypeList(self, ctx:java8Parser.ExceptionTypeListContext):
+    # Visit a parse tree produced by java8Parser#exceptiontypeList.
+    def visitExceptiontypeList(self, ctx:java8Parser.ExceptiontypeListContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#exceptionType.
-    def visitExceptionType(self, ctx:java8Parser.ExceptionTypeContext):
+    # Visit a parse tree produced by java8Parser#exceptiontype.
+    def visitExceptiontype(self, ctx:java8Parser.ExceptiontypeContext):
         return self.visitChildren(ctx)
 
 
@@ -449,18 +419,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#constructorModifier.
-    def visitConstructorModifier(self, ctx:java8Parser.ConstructorModifierContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#constructorDeclarator.
     def visitConstructorDeclarator(self, ctx:java8Parser.ConstructorDeclaratorContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#simpleTypeName.
-    def visitSimpleTypeName(self, ctx:java8Parser.SimpleTypeNameContext):
+    # Visit a parse tree produced by java8Parser#simpletypeName.
+    def visitSimpletypeName(self, ctx:java8Parser.SimpletypeNameContext):
         return self.visitChildren(ctx)
 
 
@@ -469,38 +434,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#explicitConstructorInvocation.
-    def visitExplicitConstructorInvocation(self, ctx:java8Parser.ExplicitConstructorInvocationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#enumDeclaration.
-    def visitEnumDeclaration(self, ctx:java8Parser.EnumDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#enumBody.
-    def visitEnumBody(self, ctx:java8Parser.EnumBodyContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#enumConstantList.
-    def visitEnumConstantList(self, ctx:java8Parser.EnumConstantListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#enumConstant.
-    def visitEnumConstant(self, ctx:java8Parser.EnumConstantContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#enumConstantModifier.
-    def visitEnumConstantModifier(self, ctx:java8Parser.EnumConstantModifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#enumBodyDeclarations.
-    def visitEnumBodyDeclarations(self, ctx:java8Parser.EnumBodyDeclarationsContext):
+    # Visit a parse tree produced by java8Parser#explicitconstructorInvocation.
+    def visitExplicitconstructorInvocation(self, ctx:java8Parser.ExplicitconstructorInvocationContext):
         return self.visitChildren(ctx)
 
 
@@ -511,11 +446,6 @@ class java8Visitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by java8Parser#normalInterfaceDeclaration.
     def visitNormalInterfaceDeclaration(self, ctx:java8Parser.NormalInterfaceDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#interfaceModifier.
-    def visitInterfaceModifier(self, ctx:java8Parser.InterfaceModifierContext):
         return self.visitChildren(ctx)
 
 
@@ -546,36 +476,6 @@ class java8Visitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by java8Parser#interfaceMethodDeclaration.
     def visitInterfaceMethodDeclaration(self, ctx:java8Parser.InterfaceMethodDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#interfaceMethodModifier.
-    def visitInterfaceMethodModifier(self, ctx:java8Parser.InterfaceMethodModifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#annotationTypeDeclaration.
-    def visitAnnotationTypeDeclaration(self, ctx:java8Parser.AnnotationTypeDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#annotationTypeBody.
-    def visitAnnotationTypeBody(self, ctx:java8Parser.AnnotationTypeBodyContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#annotationTypeMemberDeclaration.
-    def visitAnnotationTypeMemberDeclaration(self, ctx:java8Parser.AnnotationTypeMemberDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#annotationTypeElementDeclaration.
-    def visitAnnotationTypeElementDeclaration(self, ctx:java8Parser.AnnotationTypeElementDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#annotationTypeElementModifier.
-    def visitAnnotationTypeElementModifier(self, ctx:java8Parser.AnnotationTypeElementModifierContext):
         return self.visitChildren(ctx)
 
 
@@ -749,11 +649,6 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#enumConstantName.
-    def visitEnumConstantName(self, ctx:java8Parser.EnumConstantNameContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#whileStatement.
     def visitWhileStatement(self, ctx:java8Parser.WhileStatementContext):
         return self.visitChildren(ctx)
@@ -849,8 +744,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#catchClause.
-    def visitCatchClause(self, ctx:java8Parser.CatchClauseContext):
+    # Visit a parse tree produced by java8Parser#catchclause.
+    def visitCatchclause(self, ctx:java8Parser.CatchclauseContext):
         return self.visitChildren(ctx)
 
 
@@ -859,8 +754,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#catchType.
-    def visitCatchType(self, ctx:java8Parser.CatchTypeContext):
+    # Visit a parse tree produced by java8Parser#catchtype.
+    def visitCatchtype(self, ctx:java8Parser.CatchtypeContext):
         return self.visitChildren(ctx)
 
 
@@ -899,43 +794,43 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lf_arrayAccess.
-    def visitPrimaryNoNewArray_lf_arrayAccess(self, ctx:java8Parser.PrimaryNoNewArray_lf_arrayAccessContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__1__arrayAccess.
+    def visitPrimaryNoNewArray__1__arrayAccess(self, ctx:java8Parser.PrimaryNoNewArray__1__arrayAccessContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lfno_arrayAccess.
-    def visitPrimaryNoNewArray_lfno_arrayAccess(self, ctx:java8Parser.PrimaryNoNewArray_lfno_arrayAccessContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__2__arrayAccess.
+    def visitPrimaryNoNewArray__2__arrayAccess(self, ctx:java8Parser.PrimaryNoNewArray__2__arrayAccessContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lf_primary.
-    def visitPrimaryNoNewArray_lf_primary(self, ctx:java8Parser.PrimaryNoNewArray_lf_primaryContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__1__primary.
+    def visitPrimaryNoNewArray__1__primary(self, ctx:java8Parser.PrimaryNoNewArray__1__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lf_primary_lf_arrayAccess_lf_primary.
-    def visitPrimaryNoNewArray_lf_primary_lf_arrayAccess_lf_primary(self, ctx:java8Parser.PrimaryNoNewArray_lf_primary_lf_arrayAccess_lf_primaryContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__1__primary__1__arrayAccess__1__primary.
+    def visitPrimaryNoNewArray__1__primary__1__arrayAccess__1__primary(self, ctx:java8Parser.PrimaryNoNewArray__1__primary__1__arrayAccess__1__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lf_primary_lfno_arrayAccess_lf_primary.
-    def visitPrimaryNoNewArray_lf_primary_lfno_arrayAccess_lf_primary(self, ctx:java8Parser.PrimaryNoNewArray_lf_primary_lfno_arrayAccess_lf_primaryContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__1__primary__2__arrayAccess__1__primary.
+    def visitPrimaryNoNewArray__1__primary__2__arrayAccess__1__primary(self, ctx:java8Parser.PrimaryNoNewArray__1__primary__2__arrayAccess__1__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lfno_primary.
-    def visitPrimaryNoNewArray_lfno_primary(self, ctx:java8Parser.PrimaryNoNewArray_lfno_primaryContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__2__primary.
+    def visitPrimaryNoNewArray__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lfno_primary_lf_arrayAccess_lfno_primary.
-    def visitPrimaryNoNewArray_lfno_primary_lf_arrayAccess_lfno_primary(self, ctx:java8Parser.PrimaryNoNewArray_lfno_primary_lf_arrayAccess_lfno_primaryContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__2__primary__1__arrayAccess__2__primary.
+    def visitPrimaryNoNewArray__2__primary__1__arrayAccess__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primary__1__arrayAccess__2__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray_lfno_primary_lfno_arrayAccess_lfno_primary.
-    def visitPrimaryNoNewArray_lfno_primary_lfno_arrayAccess_lfno_primary(self, ctx:java8Parser.PrimaryNoNewArray_lfno_primary_lfno_arrayAccess_lfno_primaryContext):
+    # Visit a parse tree produced by java8Parser#primaryNoNewArray__2__primary__2__arrayAccess__2__primary.
+    def visitPrimaryNoNewArray__2__primary__2__arrayAccess__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primary__2__arrayAccess__2__primaryContext):
         return self.visitChildren(ctx)
 
 
@@ -944,13 +839,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#classInstanceCreationExpression_lf_primary.
-    def visitClassInstanceCreationExpression_lf_primary(self, ctx:java8Parser.ClassInstanceCreationExpression_lf_primaryContext):
+    # Visit a parse tree produced by java8Parser#classInstanceCreationExpression__1__primary.
+    def visitClassInstanceCreationExpression__1__primary(self, ctx:java8Parser.ClassInstanceCreationExpression__1__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#classInstanceCreationExpression_lfno_primary.
-    def visitClassInstanceCreationExpression_lfno_primary(self, ctx:java8Parser.ClassInstanceCreationExpression_lfno_primaryContext):
+    # Visit a parse tree produced by java8Parser#classInstanceCreationExpression__2__primary.
+    def visitClassInstanceCreationExpression__2__primary(self, ctx:java8Parser.ClassInstanceCreationExpression__2__primaryContext):
         return self.visitChildren(ctx)
 
 
@@ -964,13 +859,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#fieldAccess_lf_primary.
-    def visitFieldAccess_lf_primary(self, ctx:java8Parser.FieldAccess_lf_primaryContext):
+    # Visit a parse tree produced by java8Parser#fieldAccess__1__primary.
+    def visitFieldAccess__1__primary(self, ctx:java8Parser.FieldAccess__1__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#fieldAccess_lfno_primary.
-    def visitFieldAccess_lfno_primary(self, ctx:java8Parser.FieldAccess_lfno_primaryContext):
+    # Visit a parse tree produced by java8Parser#fieldAccess__2__primary.
+    def visitFieldAccess__2__primary(self, ctx:java8Parser.FieldAccess__2__primaryContext):
         return self.visitChildren(ctx)
 
 
@@ -979,13 +874,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#arrayAccess_lf_primary.
-    def visitArrayAccess_lf_primary(self, ctx:java8Parser.ArrayAccess_lf_primaryContext):
+    # Visit a parse tree produced by java8Parser#arrayAccess__1__primary.
+    def visitArrayAccess__1__primary(self, ctx:java8Parser.ArrayAccess__1__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#arrayAccess_lfno_primary.
-    def visitArrayAccess_lfno_primary(self, ctx:java8Parser.ArrayAccess_lfno_primaryContext):
+    # Visit a parse tree produced by java8Parser#arrayAccess__2__primary.
+    def visitArrayAccess__2__primary(self, ctx:java8Parser.ArrayAccess__2__primaryContext):
         return self.visitChildren(ctx)
 
 
@@ -994,33 +889,18 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#methodInvocation_lf_primary.
-    def visitMethodInvocation_lf_primary(self, ctx:java8Parser.MethodInvocation_lf_primaryContext):
+    # Visit a parse tree produced by java8Parser#methodInvocation__1__primary.
+    def visitMethodInvocation__1__primary(self, ctx:java8Parser.MethodInvocation__1__primaryContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#methodInvocation_lfno_primary.
-    def visitMethodInvocation_lfno_primary(self, ctx:java8Parser.MethodInvocation_lfno_primaryContext):
+    # Visit a parse tree produced by java8Parser#methodInvocation__2__primary.
+    def visitMethodInvocation__2__primary(self, ctx:java8Parser.MethodInvocation__2__primaryContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by java8Parser#argumentList.
     def visitArgumentList(self, ctx:java8Parser.ArgumentListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#methodReference.
-    def visitMethodReference(self, ctx:java8Parser.MethodReferenceContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#methodReference_lf_primary.
-    def visitMethodReference_lf_primary(self, ctx:java8Parser.MethodReference_lf_primaryContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#methodReference_lfno_primary.
-    def visitMethodReference_lfno_primary(self, ctx:java8Parser.MethodReference_lfno_primaryContext):
         return self.visitChildren(ctx)
 
 
@@ -1039,33 +919,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#constantExpression.
-    def visitConstantExpression(self, ctx:java8Parser.ConstantExpressionContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#expression.
     def visitExpression(self, ctx:java8Parser.ExpressionContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#lambdaExpression.
-    def visitLambdaExpression(self, ctx:java8Parser.LambdaExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#lambdaParameters.
-    def visitLambdaParameters(self, ctx:java8Parser.LambdaParametersContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#inferredFormalParameterList.
     def visitInferredFormalParameterList(self, ctx:java8Parser.InferredFormalParameterListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#lambdaBody.
-    def visitLambdaBody(self, ctx:java8Parser.LambdaBodyContext):
         return self.visitChildren(ctx)
 
 
@@ -1079,13 +939,13 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#leftHandSide.
-    def visitLeftHandSide(self, ctx:java8Parser.LeftHandSideContext):
+    # Visit a parse tree produced by java8Parser#assignmentOperator.
+    def visitAssignmentOperator(self, ctx:java8Parser.AssignmentOperatorContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#assignmentOperator.
-    def visitAssignmentOperator(self, ctx:java8Parser.AssignmentOperatorContext):
+    # Visit a parse tree produced by java8Parser#leftHandSide.
+    def visitLeftHandSide(self, ctx:java8Parser.LeftHandSideContext):
         return self.visitChildren(ctx)
 
 
@@ -1174,8 +1034,8 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#postIncrementExpression_lf_postfixExpression.
-    def visitPostIncrementExpression_lf_postfixExpression(self, ctx:java8Parser.PostIncrementExpression_lf_postfixExpressionContext):
+    # Visit a parse tree produced by java8Parser#postIncrementExpression__1__postfixExpression.
+    def visitPostIncrementExpression__1__postfixExpression(self, ctx:java8Parser.PostIncrementExpression__1__postfixExpressionContext):
         return self.visitChildren(ctx)
 
 
@@ -1184,13 +1044,18 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#postDecrementExpression_lf_postfixExpression.
-    def visitPostDecrementExpression_lf_postfixExpression(self, ctx:java8Parser.PostDecrementExpression_lf_postfixExpressionContext):
+    # Visit a parse tree produced by java8Parser#postDecrementExpression__1__postfixExpression.
+    def visitPostDecrementExpression__1__postfixExpression(self, ctx:java8Parser.PostDecrementExpression__1__postfixExpressionContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by java8Parser#castExpression.
     def visitCastExpression(self, ctx:java8Parser.CastExpressionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by java8Parser#constantExpression.
+    def visitConstantExpression(self, ctx:java8Parser.ConstantExpressionContext):
         return self.visitChildren(ctx)
 
 
