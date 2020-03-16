@@ -5,9 +5,9 @@ class SymbolTable:
         # variables/methods/classes are dictionaries with the variable/method/class names as the key.
         # variable is a dict with keys: "type", "modifiers" 
         # method is a dict with keys: "return_type", "argument_types[]", "modifiers[]"
-        # "type" is a dict with keys: "type_base", "type_dim"
+        # "type" is a dict with keys: "type_base", "type_dims"
         # "base_type" can be one of "int", "String", "char", "byte", ..., or a user-defined type
-        # "dimension" is a tuple of (1, 2 or 3 integers)
+        # "dimension" is a list of (1, 2 or 3 integers)
         # "modifiers[]" is a list of keywords such as "public", "static", "final" etc.
         # temporaries[] is a list of booleans storing if i-th temporary is free. Used in tac generation (eg. a+b+c+d)
         self.scopes = [{

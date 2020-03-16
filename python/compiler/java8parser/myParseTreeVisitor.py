@@ -217,6 +217,69 @@ class myParseTreeVisitor(java8Visitor):
 				variableIdentifiers.append(child.getChild(0).getText())
 		return variableIdentifiers
 
+	def visitUnanntype(self, ctx:java8Parser.UnanntypeContext):
+		'''
+		unanntype : unannPrimitiveType
+				|	unannReferencetype
+				;
+		'''
+		# return type as a dict with keys "type_base" and "type_dims"
+		# "type_dims" is a tuple with 1-3 values, each one can be -1 of non-neg
+		# if -1, then that means that value has to be interpreted from the initialized value
+		return self.visitChildren(ctx)
+	
+	def visitunannPrimitiveType(self, ctx:java8Parser.UnannPrimitiveTypeContext):
+		'''
+		unannPrimitiveType : numerictype
+				|	BOOLEAN
+				;
+		'''
+		return {"type_base": ctx.getText(), "dims":[]}
+
+	def visitunannReferenceType(self, ctx:java8Parser.UnannReferencetypeContext):
+		'''
+		unannReferencetype : unannClassOrInterfaceType
+				|	unanntypeVariable
+				|	unannArraytype
+		;
+		'''
+		return self.visitChildren(ctx)
+	
+	def visitUnannClassOrInterfaceType(self, ctx:java8Parser.UnannClassOrInterfaceTypeContext):
+		return {"type_base": ctx.getText(), "type_dims":[]}
+
+	def visitUnanntypeVariable(self, ctx:java8Parser.UnanntypeVariableContext):
+		return {"type_base": ctx.getText(), "type_dims":[]}
+
+	def visitUnannArraytype(self, ctx:java8Parser.UnannArraytypeContext):
+		'''
+		unannArraytype : unannPrimitiveType dims
+				|	unannClassOrInterfaceType dims
+				|	unanntypeVariable dims
+		;
+		'''
+		dtype = {"type_base": "", "type_dims":[]}
+		child0 = ctx.getChild(0)
+		child1 = ctx.getChild(1)
+		for child in self.__getChildren__(child1):
+			if (child.getText() == '['):
+				dtype["type_dims"].append(-1)
+		if (java8Parser.ruleNames[child0.getRuleIndex()] == "unannPrimitiveType"):
+			dtype["type_base"] = self.visitUnannPrimitiveType(child0)["type_base"]
+		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unannClassOrInterfaceType"):
+			dtype["type_base"] = self.visitClassOrInterfaceType(child0)["type_base"]
+		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unanntypeVariable"):
+			dtype["type_base"] = self.visitUnanntypeVariable(child0)["type_base"]
+		return dtype
+
+	def visitUnannPrimitiveType(self, ctx:java8Parser.UnannPrimitiveTypeContext):
+		'''
+		unannPrimitiveType : numerictype
+				|	BOOLEAN
+				;
+		'''
+		return ctx.getText()
+
 	def visitFieldDeclaration(self, ctx:java8Parser.FieldDeclarationContext):
 		'''
 		fieldDeclaration : modifier* unanntype variableDeclaratorList ';'
@@ -233,7 +296,7 @@ class myParseTreeVisitor(java8Visitor):
 			if(isinstance(child,self.parser.ModifierContext)):
 				fieldInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
-				fieldInfo['type'] = child.getText()
+				fieldInfo['type'] = self.visitUnanntype(child)
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				#If the reduction is already to a block need not change scope
 				fieldIdentifiers = self.visitVariableDeclaratorList(child)
@@ -241,6 +304,6 @@ class myParseTreeVisitor(java8Visitor):
 					symTable.addSymbol('variables',var,fieldInfo)
 		# print(symTable.scopes)
 		return
-	def printSymbolTable():
+	def printSymbolTable(self):
 		print(symTable.scopes)
 del java8Parser
