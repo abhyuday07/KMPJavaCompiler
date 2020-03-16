@@ -1,7 +1,8 @@
 import antlr4
 from java8parser.java8Lexer import java8Lexer
 from java8parser.java8Parser import java8Parser
-from java8parser.java8Visitor import java8Visitor
+# from java8parser.java8Visitor import java8Visitor
+from java8parser.myParseTreeVisitor import myParseTreeVisitor
 from graphviz import Digraph
 
 
@@ -137,10 +138,12 @@ def main():
 	tree = parser.compilationUnit()
 	#mytree = deepCopy(tree, None)
 	#compressTree(mytree)
-	AST_root = createAST(tree, None)
-	dot = Digraph(comment="Abstract Syntax Tree")
-	createGraph(AST_root, dot)
-	dot.render('graph', view=True)
+	visitor = myParseTreeVisitor()
+	visitor.visit(tree)
+	# AST_root = createAST(tree, None)
+	# dot = Digraph(comment="Abstract Syntax Tree")
+	# createGraph(AST_root, dot)
+	# dot.render('graph', view=True)
 	#handleExpression(mytree)
 
 if __name__ == '__main__':

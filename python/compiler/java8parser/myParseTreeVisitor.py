@@ -20,12 +20,9 @@ else:
 class myParseTreeVisitor(java8Visitor):
 	# Visit a parse tree produced by java8Parser#literal.
 	def visitLiteral(self, ctx:java8Parser.LiteralContext):
-		for child in ctx.children:
-			print(child.getSymbol().text)
+		print("hello")
 		return self.visitChildren(ctx)
 	def visitName(self,ctx:java8Parser.NameContext):
-		for child in ctx.children:
-			print(child.getSymbol().text)
 		return self.visitChildren(ctx)
 
 del java8Parser
