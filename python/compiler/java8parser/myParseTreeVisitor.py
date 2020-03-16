@@ -306,4 +306,4 @@ class myParseTreeVisitor(java8Visitor):
 		return
 	def printSymbolTable(self):
 		print(symTable.scopes)
-del java8Parser
+#del java8Parser
