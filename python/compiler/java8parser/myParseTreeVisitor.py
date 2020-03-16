@@ -76,7 +76,7 @@ class myParseTreeVisitor(java8Visitor):
 				symTable.createNewScope()
 				self.visitClassBody(child)
 				symTable.closeCurrScope()
-		print(symTable.scopes)
+		# print(symTable.scopes)
 		return
 	def visitMethodDeclaration(self, ctx:java8Parser.MethodDeclarationContext):
 		# methodDeclaration : modifier* methodHeader methodBody
@@ -198,7 +198,7 @@ class myParseTreeVisitor(java8Visitor):
 				localVariableInfo['type'] = child.getText()
 			elif(isinstance(child,self.parser.variableDeclaratorList)):
 				#If the reduction is already to a block need not change scope
-				localVariableIdentifiers = self.visitMethodBody(child)
+				localVariableIdentifiers = self.visitVariableDeclaratorList(child)
 				for var in localVariableIdentifiers:
 					symTable.addSymbol('variables',var,localVariableInfo)
 		# print(symTable.scopes)
