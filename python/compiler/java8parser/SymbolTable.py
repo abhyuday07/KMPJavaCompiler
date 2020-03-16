@@ -23,11 +23,11 @@ class SymbolTable:
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
-        if (symbol_name in self.scopes[curr_scope][symbol_type].keys()):
+        if (symbol_name in self.scopes[self.curr_scope][symbol_type].keys()):
             return -1
             # symbol already exists in the current scope
     #symbol doesn't exist in the current scope hence add it
-        self.scopes[curr_scope][symbol_type][symbol_name] = symbol_details
+        self.scopes[self.curr_scope][symbol_type][symbol_name] = symbol_details
       
     def getScopeOfSymbol(self, symbol_type, symbol_name):
         # symbol_type can be one of "variables", "methods", "classes"
@@ -35,11 +35,11 @@ class SymbolTable:
         assert(symbol_type in ["variables", "methods", "classes"])
         curr_scope = self.curr_scope
         while (curr_scope != -1):
-            if (symbol_name in self.scopes[curr_scope][symbol_type].keys()):
+            if (symbol_name in self.scopes[self.curr_scope][symbol_type].keys()):
                 # scope of definition found
                 return curr_scope
             else:
-                curr_scope = self.scopes[curr_scope]["parent"]
+                curr_scope = self.scopes[self.curr_scope]["parent"]
         # the given symbol_name of the given symbol_type was not found
         return -1
     
