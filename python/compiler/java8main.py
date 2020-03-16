@@ -140,7 +140,7 @@ def main():
 	#compressTree(mytree)
 	visitor = myParseTreeVisitor(parser,lexer)
 	visitor.visit(tree)
-	myParseTreeVisitor.printSymbolTable()
+	visitor.printSymbolTable()
 	# AST_root = createAST(tree, None)
 	# dot = Digraph(comment="Abstract Syntax Tree")
 	# createGraph(AST_root, dot)

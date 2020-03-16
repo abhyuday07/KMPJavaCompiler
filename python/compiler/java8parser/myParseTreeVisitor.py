@@ -196,7 +196,7 @@ class myParseTreeVisitor(java8Visitor):
 				localVariableInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
 				localVariableInfo['type'] = child.getText()
-			elif(isinstance(child,self.parser.variableDeclaratorList)):
+			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				#If the reduction is already to a block need not change scope
 				localVariableIdentifiers = self.visitVariableDeclaratorList(child)
 				for var in localVariableIdentifiers:
