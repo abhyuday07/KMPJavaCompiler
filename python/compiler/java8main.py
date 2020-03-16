@@ -141,6 +141,7 @@ def main():
 	visitor = myParseTreeVisitor(parser,lexer)
 	visitor.visit(tree)
 	visitor.printSymbolTable()
+	visitor.printTAC()
 	# AST_root = createAST(tree, None)
 	# dot = Digraph(comment="Abstract Syntax Tree")
 	# createGraph(AST_root, dot)

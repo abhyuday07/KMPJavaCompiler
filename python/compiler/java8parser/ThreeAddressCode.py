@@ -1,9 +1,19 @@
+if __name__ is not None and "." in __name__:
+	from .SymbolTable import SymbolTable
+else:
+	from SymbolTable import SymbolTable
+
+
+global symTable
+symTable = SymbolTable()
+
 class ThreeAddressCode:
     '''
     TAC format: [op1, op2, dest, operator]
-    Everything is stored as string.
+    Labels, identifiers etc are stored as string. Integers (immediate operands) stored as integer.
+    Operators: '+', '-', 'neg' (negation), 'goto', 'label', 'function'
     Examples:
-    a <- b+c === [b,c,a,+]
+    a <- b+c === [b,c,a,+] .
     goto L1 === ['', '', 'L1', 'goto']
     label: L1 === ['','', 'L1', 'label']  (Used in backpatching.)
     function: myfunc === ['', '', myfunc, 'function'] (Used in assembly generation)
@@ -20,8 +30,6 @@ class ThreeAddressCode:
   
     def append(self, op1, op2, dest, operator):
         self.code.append([op1, op2, dest, operator])
-        symbolTable.freeTemporary(op1)
-        symbolTable.freeTemporary(op2)
     
     def backpatch(self, list1):
         for x in list1:

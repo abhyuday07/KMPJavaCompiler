@@ -3,13 +3,14 @@ from antlr4 import *
 if __name__ is not None and "." in __name__:
 	from .java8Parser import java8Parser
 	from .java8Visitor import java8Visitor
-	from .SymbolTable import SymbolTable
+	from .ThreeAddressCode import *
 else:
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
-	from SymbolTable import SymbolTable
+	from ThreeAddressCode import *
 
-symTable = SymbolTable()
+global tac
+tac = ThreeAddressCode()
 # njp = java8Parser()
 # This class defines a complete generic visitor for a parse tree produced by java8Parser.
 '''
@@ -76,7 +77,6 @@ class myParseTreeVisitor(java8Visitor):
 				symTable.createNewScope()
 				self.visitClassBody(child)
 				symTable.closeCurrScope()
-		# print(symTable.scopes)
 		return
 	def visitMethodDeclaration(self, ctx:java8Parser.MethodDeclarationContext):
 		# methodDeclaration : modifier* methodHeader methodBody
@@ -97,7 +97,6 @@ class myParseTreeVisitor(java8Visitor):
 			elif(isinstance(child,self.parser.MethodBodyContext)):
 				#If the reduction is already to a block need not change scope
 				self.visitMethodBody(child)
-		# print(symTable.scopes)
 		return
 	def visitMethodHeader(self, ctx:java8Parser.MethodHeaderContext):
 		'''
@@ -201,7 +200,6 @@ class myParseTreeVisitor(java8Visitor):
 				localVariableIdentifiers = self.visitVariableDeclaratorList(child)
 				for var in localVariableIdentifiers:
 					symTable.addSymbol('variables',var,localVariableInfo)
-		# print(symTable.scopes)
 		return
 	def visitVariableDeclaratorList(self,ctx:java8Parser.VariableDeclaratorListContext):
 		'''
@@ -302,8 +300,127 @@ class myParseTreeVisitor(java8Visitor):
 				fieldIdentifiers = self.visitVariableDeclaratorList(child)
 				for var in fieldIdentifiers:
 					symTable.addSymbol('variables',var,fieldInfo)
-		# print(symTable.scopes)
 		return
+
+	# Visit a parse tree produced by java8Parser#unaryExpression.
+	def visitUnaryExpression(self, ctx:java8Parser.UnaryExpressionContext):
+		'''
+		unaryExpression : preIncrementExpression
+			| preDecrementExpression
+			| '+' unaryExpression
+			| '-' unaryExpression
+			| unaryExpressionNotPlusMinus
+			;
+		'''
+		children = self.__getChildren__(ctx)
+		if isinstance(children[0], self.parser.PreIncrementExpressionContext): #Rule 1
+			return self.visitPreIncrementExpression(children[0])
+		elif isinstance(children[0], self.parser.PostDecrementExpressionContext): # Rule 2
+			return self.visitPreDecrementExpression(children[0])
+		elif isinstance(children[0], self.parser.UnaryExpressionNotPlusMinusContext): #Rule 5
+			return self.visitUnaryExpressionNotPlusMinus(children[0])
+		elif isinstance(children[1], self.parser.UnaryExpressionContext):
+			if children[0].getText() == '-':	#Rule 4
+				c = self.visitUnaryExpression(children[1])
+				temp = symTable.getTemporary()
+				tac.append(c['name'], None, temp, 'neg')
+			else: # Rule 3
+				return self.visitUnaryExpression(children[1])
+		return {}
+
+	# Visit a parse tree produced by java8Parser#preIncrementExpression.
+	def visitPreIncrementExpression(self, ctx:java8Parser.PreIncrementExpressionContext):
+		'''
+		preIncrementExpression : '++' unaryExpression
+        ;
+		'''
+		children = self.__getChildren__(ctx)
+		c = self.visitUnaryExpression(children[1])
+		tac.append(c['name'],1,c['name'],'+')
+		return {'name': c['name']}
+
+	# Visit a parse tree produced by java8Parser#preDecrementExpression.
+	def visitPreDecrementExpression(self, ctx:java8Parser.PreDecrementExpressionContext):
+		'''
+		preDecrementExpression : '--' unaryExpression
+        ;
+		'''
+		children = self.__getChildren__(ctx)
+		c = self.visitUnaryExpression(children[1])
+		tac.append(c['name'],1,c['name'],'-')
+		return {'name': c['name']}
+
+	# Visit a parse tree produced by java8Parser#postIncrementExpression.
+	def visitPostIncrementExpression(self, ctx:java8Parser.PostIncrementExpressionContext):
+		'''
+		postIncrementExpression: postfixExpression '++'
+	    ;
+		'''
+		returnobj = {}
+		child = self.__getChildren__(ctx)[0]
+		childResult = self.visitPostfixExpression(child)
+		tempname = symTable.getTemporary()
+		tac.append(childResult['name'], None, tempname, '=' )
+		tac.append(childResult['name'], 1, childResult['name'], '+' )
+		returnobj['name'] = tempname
+		return returnobj
+
+	# Visit a parse tree produced by java8Parser#postfixExpression.
+	def visitPostfixExpression(self, ctx:java8Parser.PostfixExpressionContext):
+		'''
+		postfixExpression: (	primary
+		|	name
+		)
+		(	postIncrementExpression__1__postfixExpression
+		|	postDecrementExpression__1__postfixExpression
+		)*
+	    ;
+		'''
+		children = self.__getChildren__(ctx)
+		if(isinstance(children[0], self.parser.NameContext)):
+			return self.visitName(children[0])
+		# TODO: a = a++ + a++ not working.
+		return self.visitChildren(ctx)
+
+	def visitUnaryExpressionNotPlusMinus(self, ctx:java8Parser.UnaryExpressionNotPlusMinusContext):
+		'''
+		unaryExpressionNotPlusMinus : postfixExpression
+                            | '~' unaryExpression
+                            | '!' unaryExpression
+                            | castExpression
+                            ;
+		'''
+		children = self.__getChildren__(ctx)
+		if isinstance(children[0],self.parser.PostfixExpressionContext):
+			return self.visitPostfixExpression(children[0])
+		elif isinstance(children[0], self.parser.CastExpressionContext):
+			return self.visitCastExpression(children[0])
+		c = self.visitUnaryExpression(children[1])
+		temp = symTable.getTemporary()
+		if children[0].getText() == '~':
+			tac.append(c['name'], None, temp, 'complement') #Bitwise complement of an integer ~
+		else:
+			tac.append(c['name'], None, temp, 'invert') #Boolean invert !
+		return {'name': temp}
+
+
+	# Visit a parse tree produced by java8Parser#name.
+	def visitName(self, ctx:java8Parser.NameContext):
+		'''
+		name : Identifier
+		|	name '.' Identifier
+		;
+		'''
+		children = self.__getChildren__(ctx)
+		if self.__isIdentifier__(children[0]):
+			return {'name': children[0].getText()}
+		return self.visitChildren(ctx)
+
+
 	def printSymbolTable(self):
 		print(symTable.scopes)
+
+	def printTAC(self):
+		print('op1\t\top2\t\tdest\t\toperator')
+		print('\n'.join(['\t\t'.join([str(cell) for cell in row]) for row in tac.code]))
 del java8Parser

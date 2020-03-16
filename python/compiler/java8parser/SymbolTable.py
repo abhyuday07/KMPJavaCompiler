@@ -19,7 +19,7 @@ class SymbolTable:
         self.curr_scope = 0
         self.next_scope = 1
         self.offset = 0
-        self.temporaries = [True] * 1000
+        self.tempCount = 1
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
@@ -54,13 +54,4 @@ class SymbolTable:
         self.curr_scope = self.scopes[self.curr_scope]["parent"]
 
     def getTemporary(self):
-        i = 0
-        for i in len(self.temporaries):
-            if(self.temporaries[i]):
-                self.temporaries[i] = False
-                return "__TEMP_" + str(i)
-        raise Exception("Symbol table out of temporaries")
-    
-    def freeTemporary(self, name):
-        if name[0:7] == "__TEMP_":
-            self.temporaries[int(name[7:])] = True
+        return "__temp_" + str(self.tempCount)
