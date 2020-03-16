@@ -28,18 +28,6 @@ class myParseTreeVisitor(java8Visitor):
 		super().__init__()
 		self.parser = parser
 		self.lexer = lexer
-		'''
-		Here we will define some auxiliary variables to store
-		intermediate values obtained while visiting a tree
-		'''
-		# CLASS
-		# Whenever a class is declared using
-		# normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
-		self.classModifiers = []
-		self.classIdentifier = None
-		# METHOD
-		# Whenever a mrthod is declared using
-		# 
 	
 	def __isIdentifier__(self,ctx):
 		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == 102):
@@ -71,23 +59,188 @@ class myParseTreeVisitor(java8Visitor):
 		# normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
 		# child Identifier needs to be activated
 		# Currently a class is being visited
-		classModifiers = []
 		classIdentifier = None
+		classInfo = {
+			'modifiers': [],
+			'type': None,
+			'parameters': None
+		}
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ModifierContext)):
-				classModifiers.append(child.getText())
+				classInfo['modifiers'].append(child.getText())
 			elif(self.__isIdentifier__(child)):
 				classIdentifier = child.getText()
-				symTable.addSymbol('classes',classIdentifier,classModifiers)
+				symTable.addSymbol('classes',classIdentifier,classInfo)
 			elif(isinstance(child,self.parser.ClassBodyContext)):
 				symTable.createNewScope()
 				self.visitClassBody(child)
 				symTable.closeCurrScope()
 		print(symTable.scopes)
 		return
+	def visitMethodDeclaration(self, ctx:java8Parser.MethodDeclarationContext):
+		# methodDeclaration : modifier* methodHeader methodBody
+		methodIdentifier = None
+		methodInfo = {
+			'modifiers': [],
+			'type': None,
+			'parameters': None
+		}
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.ModifierContext)):
+				methodInfo['modifiers'].append(child.getText())
+			elif(isinstance(child,self.parser.MethodHeaderContext)):
+				methodIdentifier , methodInfo['type'] , methodInfo['parameters'] = self.visitMethodHeader(child)
+				symTable.addSymbol('methods',methodIdentifier,methodInfo)
 
+			elif(isinstance(child,self.parser.MethodBodyContext)):
+				#If the reduction is already to a block need not change scope
+				self.visitMethodBody(child)
+		# print(symTable.scopes)
+		return
+	def visitMethodHeader(self, ctx:java8Parser.MethodHeaderContext):
+		'''
+		methodHeader : result methodDeclarator throws_?
+		|	typeParameters annotation* result methodDeclarator throws_?
+		'''
+		methodType = None
+		methodIdentifier = None
+		methodParameters = None
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.ResultContext)):
+				methodType = child.getText()
+			elif(isinstance(child,self.parser.MethodDeclaratorContext)):
+				methodIdentifier, methodParameters = self.visitMethodDeclarator(child)
+		return methodIdentifier, methodType, methodParameters
 
+	def visitMethodDeclarator(self, ctx:java8Parser.MethodDeclaratorContext):
+		'''
+		methodDeclarator : Identifier '(' formalParameterList? ')' dims?
+		'''
+		methodIdentifier = None
+		methodParameters = []
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(self.__isIdentifier__(child)):
+				methodIdentifier = child.getText()
+			if(isinstance(child,self.parser.FormalParameterListContext)):
+				paramList = child.getText()
+				if ',' in paramList:
+					methodParameters = paramList.split(',')
+				else:
+					methodParameters.append(paramList)
+		return methodIdentifier, methodParameters
 
+	def visitBlock(self, ctx:java8Parser.BlockContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
 
+	def visitWhileStatement(self, ctx:java8Parser.WhileStatementContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+	def visitWhileStatementNoShortIf(self, ctx:java8Parser.WhileStatementNoShortIfContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+	def visitBasicForStatement(self, ctx:java8Parser.BasicForStatementContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+	def visitBasicForStatementNoShortIf(self, ctx:java8Parser.BasicForStatementNoShortIfContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+	def visitIfThenStatement(self, ctx:java8Parser.IfThenStatementContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+	def visitIfThenElseStatement(self, ctx:java8Parser.IfThenElseStatementContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+	def visitIfThenElseStatementNoShortIf(self, ctx:java8Parser.IfThenElseStatementNoShortIfContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+	def visitSwitchStatement(self, ctx:java8Parser.SwitchStatementContext):
+		symTable.createNewScope()
+		self.visitChildren(ctx)
+		symTable.closeCurrScope()
+		return
+
+	def visitLocalVariableDeclaration(self, ctx:java8Parser.LocalVariableDeclarationContext):
+		'''
+		localVariableDeclaration : variableModifier* unanntype variableDeclaratorList
+		'''
+		localVariableIdentifiers = []
+		localVariableInfo = {
+			'modifiers': [],
+			'type': None,
+			'parameters': None
+		}
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.VariableModifierContext)):
+				localVariableInfo['modifiers'].append(child.getText())
+			elif(isinstance(child,self.parser.UnanntypeContext)):
+				localVariableInfo['type'] = child.getText()
+			elif(isinstance(child,self.parser.variableDeclaratorList)):
+				#If the reduction is already to a block need not change scope
+				localVariableIdentifiers = self.visitMethodBody(child)
+				for var in localVariableIdentifiers:
+					symTable.addSymbol('variables',var,localVariableInfo)
+		# print(symTable.scopes)
+		return
+	def visitVariableDeclaratorList(self,ctx:java8Parser.VariableDeclaratorListContext):
+		'''
+		variableDeclaratorList : variableDeclarator (',' variableDeclarator)*
+		;
+		variableDeclarator : variableDeclaratorId ('=' variableInitializer)?
+		;
+		'''
+		variableIdentifiers = []
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.VariableDeclaratorContext)):
+				variableIdentifiers.append(child.getChild(0).getText())
+		return variableIdentifiers
+
+	def visitFieldDeclaration(self, ctx:java8Parser.FieldDeclarationContext):
+		'''
+		fieldDeclaration : modifier* unanntype variableDeclaratorList ';'
+		;
+		'''
+		fieldIdentifiers = []
+		fieldInfo = {
+			'modifiers': [],
+			'type': None,
+			'parameters': None
+		}
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.ModifierContext)):
+				fieldInfo['modifiers'].append(child.getText())
+			elif(isinstance(child,self.parser.UnanntypeContext)):
+				fieldInfo['type'] = child.getText()
+			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
+				#If the reduction is already to a block need not change scope
+				fieldIdentifiers = self.visitVariableDeclaratorList(child)
+				for var in fieldIdentifiers:
+					symTable.addSymbol('variables',var,fieldInfo)
+		# print(symTable.scopes)
+		return
+	def printSymbolTable():
+		print(symTable.scopes)
 del java8Parser
