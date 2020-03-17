@@ -575,7 +575,7 @@ class myParseTreeVisitor(java8Visitor):
 			# methodName '(' argumentList? ')'
 			symbol = children[0].getText()
 			methodInfo = symTable.lookup('methods',symbol)
-			print(symbol,methodInfo)
+			# print(symbol,methodInfo)
 
 		elif(isinstance(children[0],self.parser.NameContext)):
 			# name '.' typeArguments? Identifier '(' argumentList? ')'
@@ -590,7 +590,7 @@ class myParseTreeVisitor(java8Visitor):
 				if(self.__isIdentifier__(child)):
 					symbol = child.getText()
 			methodInfo = symTable.lookup('methods',symbol,resolveName)
-			print(symbol,methodInfo)
+			# print(symbol,methodInfo)
 
 		return
 
