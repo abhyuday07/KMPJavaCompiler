@@ -170,7 +170,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		initializer_value = []
 		for child in self.__getChildren__(ctx):
-			if (java8Parser.ruleNames[ctx.getRuleInde()] == "variableInitializer"):
+			if (java8Parser.ruleNames[ctx.getRuleIndex()] == "variableInitializer"):
 				initializer_value.append(self.visitVariableInitializer(child))
 		return initializer_value
 
