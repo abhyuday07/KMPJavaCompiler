@@ -454,9 +454,6 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 
 		p = self.__visitChildren__(ctx)
-		#DEBUGGING:
-		p[2] = self.visitExpression(self.__getChildren__(ctx)[2])
-		#END DEBUG
 		commonType = self.__typecheck__(p[0].get('type'), p[2]['type'])
 		if not commonType:
 			self.__errorHandler__("Types don't match")
@@ -464,8 +461,8 @@ class myParseTreeVisitor(java8Visitor):
 			tac.append(p[2]['name'], None, p[0].get('name'), '=')
 			#TODO: How to handle leftHandSide array and field accesses. Now handled only 'name'.
 		else:
-			tac.append(p[2]['name'], p[0].get('name'), p[0].get('name'), p[1]['operator'][:-1])
-		return {'type': commonType}
+			tac.append( p[0].get('name'), p[2]['name'],p[0].get('name'), p[1]['operator'][:-1])
+		return {'type': commonType, 'name':p[0].get('name')}
 	
 			
 
@@ -480,12 +477,11 @@ class myParseTreeVisitor(java8Visitor):
                       | conditionalOrExpression '?' expression ':' conditionalExpression
                       ;
 		'''
-		#TODO: Complete this.
-		# print(ctx.getText()) # This is giving wrong text. These must not be this.
+		#TODO: Complete this function.
 		childrenResult =  self.visitChildren(ctx)
 		if childrenResult and 'name' in childrenResult and 'type' in childrenResult:
 			return childrenResult
-		return {'type':'boolean', 'name':'RANDOMNAME'}
+		return {'type':'boolean', 'name':'MUSTNOTEXECUTE'}
 	
 	# Visit a parse tree produced by java8Parser#name.
 	def visitName(self, ctx:java8Parser.NameContext):

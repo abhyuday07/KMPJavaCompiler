@@ -9,10 +9,11 @@ public class SimpleProgram {
 		int d=a+b;
 		c=a;
 		b/=d;
+		a++;
 		// int val = 0;
 		// val++;
 		// val = ++val + ++val;
-		// System.out.println("X = " + val);
+		System.out.println(a=100);
 		// val += 1;
 		// System.out.println ("Inside main");
 		// funct1();
