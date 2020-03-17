@@ -199,7 +199,7 @@ class myParseTreeVisitor(java8Visitor):
 				#If the reduction is already to a block need not change scope
 				localVariableIdentifiers = self.visitVariableDeclaratorList(child)
 				for var in localVariableIdentifiers:
-					symTable.addSymbol('variables',var,localVariableInfo)
+					symTable.addSymbol('variables',var['identifier'],localVariableInfo)
 		return
 	
 	def visitVariableInitializerList(self, ctx:java8Parser.VariableInitializerListContext):
