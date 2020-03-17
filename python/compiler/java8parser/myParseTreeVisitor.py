@@ -183,7 +183,9 @@ class myParseTreeVisitor(java8Visitor):
 			if(isinstance(child,self.parser.VariableModifierContext)):
 				fpInfo['modifiers'].append(child.getText())
 			if(isinstance(child,self.parser.UnanntypeContext)):
-				fpInfo['type'] = self.visitUnanntype(child)
+				fpType = self.visitUnanntype(child)
+				fpInfo['type'] = fpType['type_base']
+				fpInfo['dims'] = fpType['type_dims']
 			if(isinstance(child,self.parser.VariableDeclaratorIdContext)):
 				var = self.visitVariableDeclaratorId(child)
 				fpIdentifier = var['identifier']
@@ -257,19 +259,23 @@ class myParseTreeVisitor(java8Visitor):
 		localVariableInfo = {
 			'modifiers': [],
 			'type': None,
-			'parameters': None
+			'parameters': None,
+			'dims' : None
 		}
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.VariableModifierContext)):
 				localVariableInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
-				localVariableInfo['type'] = self.visitUnanntype(child)
+				vdType = self.visitUnanntype(child)
+				localVariableInfo['type'] = vdType['type_base']
+				localVariableInfo['dims'] = vdType['type_dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				vdList = self.visitVariableDeclaratorList(child)
 				for var in vdList:
 					varIdentifier = var['identifier']
 					varInfo = localVariableInfo.copy()
+					# Both C-type and Java type dimensions supported
 					varInfo['dims'] = var['dims']
 					symTable.addSymbol('variables',varIdentifier,varInfo)
 		return
@@ -350,15 +356,15 @@ class myParseTreeVisitor(java8Visitor):
 		# if -1, then that means that value has to be interpreted from the initialized value
 		return self.visitChildren(ctx)
 	
-	def visitunannPrimitiveType(self, ctx:java8Parser.UnannPrimitiveTypeContext):
+	def visitUnannPrimitiveType(self, ctx:java8Parser.UnannPrimitiveTypeContext):
 		'''
 		unannPrimitiveType : numerictype
 				|	BOOLEAN
 				;
 		'''
-		return {"type_base": ctx.getText(), "dims":[]}
+		return {"type_base": ctx.getText(), "type_dims":[]}
 
-	def visitunannReferenceType(self, ctx:java8Parser.UnannReferencetypeContext):
+	def visitUnannReferenceType(self, ctx:java8Parser.UnannReferencetypeContext):
 		'''
 		unannReferencetype : unannClassOrInterfaceType
 				|	unanntypeVariable
@@ -398,14 +404,6 @@ class myParseTreeVisitor(java8Visitor):
 		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unanntypeVariable"):
 			dtype["type_base"] = self.visitUnanntypeVariable(child0)["type_base"]
 		return dtype
-
-	def visitUnannPrimitiveType(self, ctx:java8Parser.UnannPrimitiveTypeContext):
-		'''
-		unannPrimitiveType : numerictype
-				|	BOOLEAN
-				;
-		'''
-		return ctx.getText()
 
 	def visitFieldDeclaration(self, ctx:java8Parser.FieldDeclarationContext):
 		'''
@@ -548,7 +546,7 @@ class myParseTreeVisitor(java8Visitor):
 			if symbolInfo:
 				nameInfo = {'name': symbol, 'type': symbolInfo['type']}
 				return nameInfo
-			print("Symbol not found in symTable: " + symbol)
+			symTable.errorHandler(symbol)
 		return self.visitChildren(ctx)
 
 
