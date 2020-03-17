@@ -184,12 +184,14 @@ class myParseTreeVisitor(java8Visitor):
 				fpInfo['modifiers'].append(child.getText())
 			if(isinstance(child,self.parser.UnanntypeContext)):
 				fpType = self.visitUnanntype(child)
+				# print(fpType)
 				fpInfo['type'] = fpType['type_base']
 				fpInfo['dims'] = fpType['type_dims']
 			if(isinstance(child,self.parser.VariableDeclaratorIdContext)):
 				var = self.visitVariableDeclaratorId(child)
 				fpIdentifier = var['identifier']
 				fpInfo['dims'] = var['dims']
+		# print(fpInfo)
 		return fpIdentifier, fpInfo
 
 	def visitLastFormalParameter(self,ctx:java8Parser.LastFormalParameterContext):
@@ -400,7 +402,9 @@ class myParseTreeVisitor(java8Visitor):
 		if (java8Parser.ruleNames[child0.getRuleIndex()] == "unannPrimitiveType"):
 			dtype["type_base"] = self.visitUnannPrimitiveType(child0)["type_base"]
 		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unannClassOrInterfaceType"):
-			dtype["type_base"] = self.visitClassOrInterfaceType(child0)["type_base"]
+			# Not handled
+			# pass
+			dtype["type_base"] = self.visitUnannClassOrInterfaceType(child0)["type_base"]
 		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unanntypeVariable"):
 			dtype["type_base"] = self.visitUnanntypeVariable(child0)["type_base"]
 		return dtype
@@ -414,19 +418,26 @@ class myParseTreeVisitor(java8Visitor):
 		fieldInfo = {
 			'modifiers': [],
 			'type': None,
-			'parameters': None
+			'parameters': None,
+			'dims': None
 		}
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ModifierContext)):
 				fieldInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
-				fieldInfo['type'] = self.visitUnanntype(child)
+				fType = self.visitUnanntype(child)
+				fieldInfo['type'] = fType['type_base']
+				fieldInfo['dims'] = fType['type_dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				#If the reduction is already to a block need not change scope
 				fieldIdentifiers = self.visitVariableDeclaratorList(child)
 				for var in fieldIdentifiers:
-					symTable.addSymbol('variables',var,fieldInfo)
+					varIdentifier = var['identifier']
+					varInfo = fieldInfo.copy()
+					varInfo['dims'] = var['dims']
+					# varInfo['value'] = var['value']
+					symTable.addSymbol('variables',varIdentifier,varInfo)
 		return
 
 	# Visit a parse tree produced by java8Parser#unaryExpression.
