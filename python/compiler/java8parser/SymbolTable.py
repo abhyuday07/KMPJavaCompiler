@@ -23,7 +23,7 @@ class SymbolTable:
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
-        if (symbol_name in self.scopes[self.curr_scope][symbol_type].keys()):
+        if (symbol_name in self.scopes[self.curr_scope][symbol_type]):
             return -1
             # symbol already exists in the current scope
     #symbol doesn't exist in the current scope hence add it
@@ -33,15 +33,14 @@ class SymbolTable:
         # symbol_type can be one of "variables", "methods", "classes"
         # search will be performed in current scope, then parent scope, ..., global scope
         assert(symbol_type in ["variables", "methods", "classes"])
-        curr_scope = self.curr_scope
-        while (curr_scope != -1):
-            if (symbol_name in self.scopes[self.curr_scope][symbol_type].keys()):
-                # scope of definition found
-                return curr_scope
+        tmp_scope = self.curr_scope
+        while (tmp_scope != -1):
+            if (symbol_name in self.scopes[tmp_scope][symbol_type]):
+                return tmp_scope
             else:
-                curr_scope = self.scopes[self.curr_scope]["parent"]
+                tmp_scope = self.scopes[tmp_scope]["parent"]
         # the given symbol_name of the given symbol_type was not found
-        return -1
+        return None
     
     def createNewScope(self):
         # appends a new scope entry into he self.scopes list
@@ -52,6 +51,16 @@ class SymbolTable:
     def closeCurrScope(self):
         # changes self.curr_scope to parent scope
         self.curr_scope = self.scopes[self.curr_scope]["parent"]
+
+    def lookup(self, symbol_type, symbol):
+        # searches for a symbol_type(variable, method etc.) and symbol and returns it's object.
+        tmp_scope = self.curr_scope
+        while tmp_scope != -1:
+            if symbol in self.scopes[tmp_scope][symbol_type]:
+                return self.scopes[tmp_scope][symbol_type][symbol]
+            tmp_scope = self.scopes[tmp_scope]['parent']
+        return None
+
 
     def getTemporary(self):
         return "__temp_" + str(self.tempCount)

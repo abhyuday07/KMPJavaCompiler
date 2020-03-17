@@ -470,7 +470,13 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		children = self.__getChildren__(ctx)
 		if self.__isIdentifier__(children[0]):
-			return {'name': children[0].getText()}
+			symbol = children[0].getText()
+			symbolInfo= symTable.lookup('variables', symbol)
+			scopeNo = symTable.getScopeOfSymbol('variables', symbol)
+			if symbolInfo:
+				nameInfo = {'name': symbol, 'type': symbolInfo['type']}
+				return nameInfo
+			print("Symbol not found in symTable: " + symbol)
 		return self.visitChildren(ctx)
 
 
