@@ -58,6 +58,11 @@ class SymbolTable:
         while tmp_scope != -1:
             if symbol in self.scopes[tmp_scope][symbol_type]:
                 return self.scopes[tmp_scope][symbol_type][symbol]
+            elif (symbol_type == 'variables'):
+                # This variable may be in the method parameters
+                for method in self.scopes[tmp_scope]['methods']:
+                    if(symbol in self.scopes[tmp_scope]['methods'][method]['parameters']):
+                        return self.scopes[tmp_scope]['methods'][method]['parameters'][symbol]
             tmp_scope = self.scopes[tmp_scope]['parent']
         return None
 
