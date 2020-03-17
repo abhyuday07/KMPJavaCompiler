@@ -8,7 +8,8 @@ else:
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
 	from ThreeAddressCode import *
-
+import json
+from graphviz import Digraph
 global tac
 tac = ThreeAddressCode()
 # njp = java8Parser()
@@ -126,11 +127,81 @@ class myParseTreeVisitor(java8Visitor):
 				methodIdentifier = child.getText()
 			if(isinstance(child,self.parser.FormalParameterListContext)):
 				paramList = child.getText()
-				if ',' in paramList:
-					methodParameters = paramList.split(',')
-				else:
-					methodParameters.append(paramList)
+				methodParameters = self.visitFormalParameterList(child)
 		return methodIdentifier, methodParameters
+
+	def visitFormalParameterList(self,ctx:java8Parser.FormalParameterListContext):
+		'''
+		formalParameterList : receiverParameter
+		| 	formalParameters ',' lastFormalParameter
+		| 	lastFormalParameter
+		;
+		'''
+		fpDict = {}
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.FormalParametersContext)):
+				fpDict.update(self.visitFormalParameters(child))
+			if(isinstance(child,self.parser.LastFormalParameterContext)):
+				fpIdentifier, fpInfo = self.visitLastFormalParameter(child)
+				fpDict[fpIdentifier] = fpInfo
+			if(isinstance(child,self.parser.ReceiverParameterContext)):
+				# Not supported
+				pass
+		return fpDict
+
+	def visitFormalParameters(self,ctx:java8Parser.FormalParametersContext):
+		'''
+		formalParameters : formalParameter (',' formalParameter)*
+		|	receiverParameter (',' formalParameter)*
+		;
+		'''
+		fpDict = {}
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.ReceiverParameterContext)):
+				# Not supported
+				pass
+			if(isinstance(child,self.parser.FormalParameterContext)):
+				fpIdentifier, fpInfo = self.visitFormalParameter(child)
+				fpDict[fpIdentifier] = fpInfo
+		return fpDict
+
+	def visitFormalParameter(self,ctx:java8Parser.FormalParameterContext):
+		'''
+		formalParameter : variableModifier* unanntype variableDeclaratorId
+		;
+		'''
+		fpIdentifier = None
+		fpInfo = {
+			'modifiers': [],
+			'type': None,
+			'dims': None
+		}
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.VariableModifierContext)):
+				fpInfo['modifiers'].append(child.getText())
+			if(isinstance(child,self.parser.UnanntypeContext)):
+				fpInfo['type'] = self.visitUnanntype(child)
+			if(isinstance(child,self.parser.VariableDeclaratorIdContext)):
+				var = self.visitVariableDeclaratorId(child)
+				fpIdentifier = var['identifier']
+				fpInfo['dims'] = var['dims']
+		return fpIdentifier, fpInfo
+
+	def visitLastFormalParameter(self,ctx:java8Parser.LastFormalParameterContext):
+		'''
+		lastFormalParameter : variableModifier* unanntype annotation* '...' variableDeclaratorId
+		|	formalParameter
+		;
+		'''
+		if(ctx.getChildCount() == 1):
+			# return formalParameter
+			return self.visitChildren(ctx)
+		else:
+			# Not supported
+			pass
 
 	def visitBlock(self, ctx:java8Parser.BlockContext):
 		symTable.createNewScope()
@@ -183,7 +254,6 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		localVariableDeclaration : variableModifier* unanntype variableDeclaratorList
 		'''
-		localVariableIdentifiers = []
 		localVariableInfo = {
 			'modifiers': [],
 			'type': None,
@@ -196,10 +266,12 @@ class myParseTreeVisitor(java8Visitor):
 			elif(isinstance(child,self.parser.UnanntypeContext)):
 				localVariableInfo['type'] = self.visitUnanntype(child)
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
-				#If the reduction is already to a block need not change scope
-				localVariableIdentifiers = self.visitVariableDeclaratorList(child)
-				for var in localVariableIdentifiers:
-					symTable.addSymbol('variables',var['identifier'],localVariableInfo)
+				vdList = self.visitVariableDeclaratorList(child)
+				for var in vdList:
+					varIdentifier = var['identifier']
+					varInfo = localVariableInfo.copy()
+					varInfo['dims'] = var['dims']
+					symTable.addSymbol('variables',varIdentifier,varInfo)
 		return
 	
 	def visitVariableInitializerList(self, ctx:java8Parser.VariableInitializerListContext):
@@ -481,7 +553,11 @@ class myParseTreeVisitor(java8Visitor):
 
 
 	def printSymbolTable(self):
-		print(symTable.scopes)
+		dot = Digraph(comment="Symbol Table")
+		for i in range(0,len(symTable.scopes)):
+			dot.node(str(i),json.dumps(symTable.scopes[i],indent=4))
+			dot.edge(str(symTable.scopes[i]["parent"]), str(i))
+		dot.render('graph',view=True)
 
 	def printTAC(self):
 		print('op1\t\top2\t\tdest\t\toperator')
