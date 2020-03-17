@@ -35,6 +35,7 @@
 	public ListNode(Object data, ListNode next)
 	{	myData = data;
 		myNext = next;
+		int arr[5];
 	}
 
 	

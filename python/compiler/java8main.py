@@ -138,7 +138,7 @@ def main():
 	tree = parser.compilationUnit()
 	# mytree = deepCopy(tree, None)
 	#compressTree(mytree)
-	visitor = myParseTreeVisitor(parser,lexer)
+	visitor = myParseTreeVisitor(parser,lexer,tree)
 	visitor.visit(tree)
 	visitor.printSymbolTable()
 	visitor.printTAC()
