@@ -26,7 +26,7 @@ tac = ThreeAddressCode()
 '''
 class myParseTreeVisitor(java8Visitor):
 	# Visit a parse tree produced by java8Parser#literal.
-	def __init__(self,parser,lexer):
+	def __init__(self,parser: java8Parser,lexer):
 		super().__init__()
 		self.parser = parser
 		self.lexer = lexer
@@ -56,6 +56,21 @@ class myParseTreeVisitor(java8Visitor):
 					if(isinstance(ctx, tree.Tree.TerminalNode)):
 						children.append(child)
 			return children
+	def __visitChildren__(self, ctx):
+		'''
+		Visits all children and returns the results in a list.
+		'''
+		result = []
+		for child in self.__getChildren__(ctx):
+			result.append(child.accept(self))
+		return result
+
+	def __typecheck__(self,type1, type2):
+		#TODO: Fill this.
+		return type1
+	
+	def __errorHandler__(self, str):
+		raise Exception(str)
 
 	def visitNormalclassDeclaration(self, ctx:java8Parser.NormalclassDeclarationContext):
 		# normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
@@ -542,6 +557,55 @@ class myParseTreeVisitor(java8Visitor):
 		return {'name': temp}
 
 
+	# Visit a parse tree produced by java8Parser#expressionStatement.
+	def visitExpressionStatement(self, ctx:java8Parser.ExpressionStatementContext):
+		'''
+		expressionStatement : statementExpression ';'
+		;
+		'''
+		return self.visitStatementExpression(self.__getChildren__(ctx)[0]) #Calling the default function. Default functions result of last child
+
+	# Visit a parse tree produced by java8Parser#assignment.
+	def visitAssignment(self, ctx:java8Parser.AssignmentContext):
+		'''
+		assignment : leftHandSide assignmentOperator expression
+		;
+		'''
+
+		p = self.__visitChildren__(ctx)
+		#DEBUGGING:
+		p[2] = self.visitExpression(self.__getChildren__(ctx)[2])
+		#END DEBUG
+		commonType = self.__typecheck__(p[0].get('type'), p[2]['type'])
+		if not commonType:
+			self.__errorHandler__("Types don't match")
+		if(p[1]['operator'] == '='):
+			tac.append(p[2]['name'], None, p[0].get('name'), '=')
+			#TODO: How to handle leftHandSide array and field accesses. Now handled only 'name'.
+		else:
+			tac.append(p[2]['name'], p[0].get('name'), p[0].get('name'), p[1]['operator'][:-1])
+		return {'type': commonType}
+	
+			
+
+	# Visit a parse tree produced by java8Parser#assignmentOperator.
+	def visitAssignmentOperator(self, ctx:java8Parser.AssignmentOperatorContext):
+		return {'operator': ctx.getText()}
+
+	# Visit a parse tree produced by java8Parser#conditionalExpression.
+	def visitConditionalExpression(self, ctx:java8Parser.ConditionalExpressionContext):
+		'''
+		conditionalExpression : conditionalOrExpression
+                      | conditionalOrExpression '?' expression ':' conditionalExpression
+                      ;
+		'''
+		#TODO: Complete this.
+		# print(ctx.getText()) # This is giving wrong text. These must not be this.
+		childrenResult =  self.visitChildren(ctx)
+		if childrenResult and 'name' in childrenResult and 'type' in childrenResult:
+			return childrenResult
+		return {'type':'boolean', 'name':'RANDOMNAME'}
+	
 	# Visit a parse tree produced by java8Parser#name.
 	def visitName(self, ctx:java8Parser.NameContext):
 		'''

@@ -31,7 +31,7 @@ class ThreeAddressCode:
     def append(self, op1, op2, dest, operator):
         self.code.append([op1, op2, dest, operator])
     
-    def backpatch(self, list1):
+    def backpatch(self, list1, label):
         for x in list1:
             self.code[x][2] = label
   
