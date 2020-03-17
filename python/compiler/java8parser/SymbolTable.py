@@ -21,6 +21,7 @@ class SymbolTable:
         self.offset = 0
         self.tempCount = 1
         self.scope_lookup = {}
+        self.node_to_table = {}
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
@@ -43,14 +44,18 @@ class SymbolTable:
         # the given symbol_name of the given symbol_type was not found
         return None
     
-    def createNewScope(self,addScopeLookup=None):
+    def createNewScope(self,addScopeLookup=None,className=None):
         # appends a new scope entry into he self.scopes list
         self.scopes.append({"variables":{},"methods":{},"classes":{},"parent":self.curr_scope})
+        if(className):
+            self.scope_lookup[str(className)+':'+str(self.curr_scope)] = self.next_scope
         if(addScopeLookup):
-            self.scope_lookup[str(addScopeLookup)+':'+str(self.curr_scope)] = self.next_scope
+            self.node_to_table[id(addScopeLookup)] = self.next_scope
         self.curr_scope = self.next_scope
         self.next_scope += 1
 
+    def invokeScope(self,ctx):
+        self.curr_scope = self.node_to_table[id(ctx)]
     def closeCurrScope(self):
         # changes self.curr_scope to parent scope
         self.curr_scope = self.scopes[self.curr_scope]["parent"]

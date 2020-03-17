@@ -4,10 +4,11 @@ if __name__ is not None and "." in __name__:
 	from .java8Parser import java8Parser
 	from .java8Visitor import java8Visitor
 	from .ThreeAddressCode import *
+	from .firstPassTreeVisitor import firstPassTreeVisitor
 else:
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
-	from ThreeAddressCode import *
+	from firstPassTreeVisitor import firstPassTreeVisitor
 import json
 from graphviz import Digraph
 global tac
@@ -24,12 +25,15 @@ tac = ThreeAddressCode()
   'getTypedRuleContext', 'getTypedRuleContexts', 'importDeclaration', 'invokingState', 'isEmpty', 'packageDeclaration', 
   'parentCtx', 'parser', 'removeLastChild', 'setAltNumber', 'start', 'stop', 'toString', 'toStringTree', 'typeDeclaration']
 '''
+
 class myParseTreeVisitor(java8Visitor):
 	# Visit a parse tree produced by java8Parser#literal.
-	def __init__(self,parser,lexer):
+	def __init__(self,parser,lexer,tree):
 		super().__init__()
 		self.parser = parser
 		self.lexer = lexer
+		fpTreeVisitor = firstPassTreeVisitor(parser,lexer,symTable)
+		fpTreeVisitor.visit(tree)
 	
 	def __isIdentifier__(self,ctx):
 		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == 102):
@@ -59,197 +63,74 @@ class myParseTreeVisitor(java8Visitor):
 
 	def visitNormalclassDeclaration(self, ctx:java8Parser.NormalclassDeclarationContext):
 		# normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
-		# child Identifier needs to be activated
-		# Currently a class is being visited
-		classIdentifier = None
-		classInfo = {
-			'modifiers': [],
-			'type': None,
-			'parameters': None
-		}
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ModifierContext)):
-				classInfo['modifiers'].append(child.getText())
+				pass
 			elif(self.__isIdentifier__(child)):
-				classIdentifier = child.getText()
-				symTable.addSymbol('classes',classIdentifier,classInfo)
+				pass
 			elif(isinstance(child,self.parser.ClassBodyContext)):
-				symTable.createNewScope(addScopeLookup=classIdentifier)
+				symTable.invokeScope(ctx)
 				self.visitClassBody(child)
 				symTable.closeCurrScope()
 		return
 	def visitMethodDeclaration(self, ctx:java8Parser.MethodDeclarationContext):
 		# methodDeclaration : modifier* methodHeader methodBody
-		methodIdentifier = None
-		methodInfo = {
-			'modifiers': [],
-			'type': None,
-			'parameters': None
-		}
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ModifierContext)):
-				methodInfo['modifiers'].append(child.getText())
+				pass
 			elif(isinstance(child,self.parser.MethodHeaderContext)):
-				methodIdentifier , methodInfo['type'] , methodInfo['parameters'] = self.visitMethodHeader(child)
-				symTable.addSymbol('methods',methodIdentifier,methodInfo)
-
+				pass
 			elif(isinstance(child,self.parser.MethodBodyContext)):
-				#If the reduction is already to a block need not change scope
+				symTable.invokeScope(ctx)
 				self.visitMethodBody(child)
+				symTable.closeCurrScope()
 		return
-	def visitMethodHeader(self, ctx:java8Parser.MethodHeaderContext):
-		'''
-		methodHeader : result methodDeclarator throws_?
-		|	typeParameters annotation* result methodDeclarator throws_?
-		'''
-		methodType = None
-		methodIdentifier = None
-		methodParameters = None
-		children = self.__getChildren__(ctx)
-		for child in children:
-			if(isinstance(child,self.parser.ResultContext)):
-				methodType = child.getText()
-			elif(isinstance(child,self.parser.MethodDeclaratorContext)):
-				methodIdentifier, methodParameters = self.visitMethodDeclarator(child)
-		return methodIdentifier, methodType, methodParameters
-
-	def visitMethodDeclarator(self, ctx:java8Parser.MethodDeclaratorContext):
-		'''
-		methodDeclarator : Identifier '(' formalParameterList? ')' dims?
-		'''
-		methodIdentifier = None
-		methodParameters = []
-		children = self.__getChildren__(ctx)
-		for child in children:
-			if(self.__isIdentifier__(child)):
-				methodIdentifier = child.getText()
-			if(isinstance(child,self.parser.FormalParameterListContext)):
-				paramList = child.getText()
-				methodParameters = self.visitFormalParameterList(child)
-		return methodIdentifier, methodParameters
-
-	def visitFormalParameterList(self,ctx:java8Parser.FormalParameterListContext):
-		'''
-		formalParameterList : receiverParameter
-		| 	formalParameters ',' lastFormalParameter
-		| 	lastFormalParameter
-		;
-		'''
-		fpDict = {}
-		children = self.__getChildren__(ctx)
-		for child in children:
-			if(isinstance(child,self.parser.FormalParametersContext)):
-				fpDict.update(self.visitFormalParameters(child))
-			if(isinstance(child,self.parser.LastFormalParameterContext)):
-				fpIdentifier, fpInfo = self.visitLastFormalParameter(child)
-				fpDict[fpIdentifier] = fpInfo
-			if(isinstance(child,self.parser.ReceiverParameterContext)):
-				# Not supported
-				pass
-		return fpDict
-
-	def visitFormalParameters(self,ctx:java8Parser.FormalParametersContext):
-		'''
-		formalParameters : formalParameter (',' formalParameter)*
-		|	receiverParameter (',' formalParameter)*
-		;
-		'''
-		fpDict = {}
-		children = self.__getChildren__(ctx)
-		for child in children:
-			if(isinstance(child,self.parser.ReceiverParameterContext)):
-				# Not supported
-				pass
-			if(isinstance(child,self.parser.FormalParameterContext)):
-				fpIdentifier, fpInfo = self.visitFormalParameter(child)
-				fpDict[fpIdentifier] = fpInfo
-		return fpDict
-
-	def visitFormalParameter(self,ctx:java8Parser.FormalParameterContext):
-		'''
-		formalParameter : variableModifier* unanntype variableDeclaratorId
-		;
-		'''
-		fpIdentifier = None
-		fpInfo = {
-			'modifiers': [],
-			'type': None,
-			'dims': None
-		}
-		children = self.__getChildren__(ctx)
-		for child in children:
-			if(isinstance(child,self.parser.VariableModifierContext)):
-				fpInfo['modifiers'].append(child.getText())
-			if(isinstance(child,self.parser.UnanntypeContext)):
-				fpType = self.visitUnanntype(child)
-				# print(fpType)
-				fpInfo['type'] = fpType['type_base']
-				fpInfo['dims'] = fpType['type_dims']
-			if(isinstance(child,self.parser.VariableDeclaratorIdContext)):
-				var = self.visitVariableDeclaratorId(child)
-				fpIdentifier = var['identifier']
-				fpInfo['dims'] = var['dims']
-		# print(fpInfo)
-		return fpIdentifier, fpInfo
-
-	def visitLastFormalParameter(self,ctx:java8Parser.LastFormalParameterContext):
-		'''
-		lastFormalParameter : variableModifier* unanntype annotation* '...' variableDeclaratorId
-		|	formalParameter
-		;
-		'''
-		if(ctx.getChildCount() == 1):
-			# return formalParameter
-			return self.visitChildren(ctx)
-		else:
-			# Not supported
-			pass
 
 	def visitBlock(self, ctx:java8Parser.BlockContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 
 	def visitWhileStatement(self, ctx:java8Parser.WhileStatementContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 	def visitWhileStatementNoShortIf(self, ctx:java8Parser.WhileStatementNoShortIfContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 	def visitBasicForStatement(self, ctx:java8Parser.BasicForStatementContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 	def visitBasicForStatementNoShortIf(self, ctx:java8Parser.BasicForStatementNoShortIfContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 	def visitIfThenStatement(self, ctx:java8Parser.IfThenStatementContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 	def visitIfThenElseStatement(self, ctx:java8Parser.IfThenElseStatementContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 	def visitIfThenElseStatementNoShortIf(self, ctx:java8Parser.IfThenElseStatementNoShortIfContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
 	def visitSwitchStatement(self, ctx:java8Parser.SwitchStatementContext):
-		symTable.createNewScope()
+		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
 		symTable.closeCurrScope()
 		return
