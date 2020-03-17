@@ -75,7 +75,7 @@ class myParseTreeVisitor(java8Visitor):
 				classIdentifier = child.getText()
 				symTable.addSymbol('classes',classIdentifier,classInfo)
 			elif(isinstance(child,self.parser.ClassBodyContext)):
-				symTable.createNewScope()
+				symTable.createNewScope(addScopeLookup=classIdentifier)
 				self.visitClassBody(child)
 				symTable.closeCurrScope()
 		return
@@ -560,8 +560,49 @@ class myParseTreeVisitor(java8Visitor):
 			symTable.errorHandler(symbol)
 		return self.visitChildren(ctx)
 
+	def __handleMethods__(self,ctx):
+		'''
+		methodInvocation:	methodName '(' argumentList? ')'
+	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
+	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
+	    |	primary '.' typeArguments? Identifier '(' argumentList? ')'
+	    |	SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+	    |	name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+	    ;
+		'''
+		children = self.__getChildren__(ctx)
+		if(isinstance(children[0],self.parser.MethodNameContext)):
+			# methodName '(' argumentList? ')'
+			symbol = children[0].getText()
+			methodInfo = symTable.lookup('methods',symbol)
+			print(symbol,methodInfo)
+
+		elif(isinstance(children[0],self.parser.NameContext)):
+			# name '.' typeArguments? Identifier '(' argumentList? ')'
+			# name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+			resolveName = []
+			if '.' in children[0].getText():
+				resolveName = children[0].getText().split('.')
+			else:
+				resolveName.append(children[0].getText())
+			symbol = None
+			for child in children:
+				if(self.__isIdentifier__(child)):
+					symbol = child.getText()
+			methodInfo = symTable.lookup('methods',symbol,resolveName)
+			print(symbol,methodInfo)
+
+		return
+
+	def visitMethodInvocation(self, ctx: java8Parser.MethodInvocationContext):
+		return self.__handleMethods__(ctx)
+	def visitMethodInvocation__1__primary(self, ctx: java8Parser.MethodInvocation__1__primaryContext):
+		return self.__handleMethods__(ctx)
+	def visitMethodInvocation__2__primary(self, ctx: java8Parser.MethodInvocation__2__primaryContext):
+		return self.__handleMethods__(ctx)
 
 	def printSymbolTable(self):
+		print(symTable.scope_lookup)
 		dot = Digraph(comment="Symbol Table")
 		for i in range(0,len(symTable.scopes)):
 			dot.node(str(i),json.dumps(symTable.scopes[i],indent=4))

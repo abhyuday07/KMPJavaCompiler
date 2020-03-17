@@ -20,6 +20,7 @@ class SymbolTable:
         self.next_scope = 1
         self.offset = 0
         self.tempCount = 1
+        self.scope_lookup = {}
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
@@ -42,9 +43,11 @@ class SymbolTable:
         # the given symbol_name of the given symbol_type was not found
         return None
     
-    def createNewScope(self):
+    def createNewScope(self,addScopeLookup=None):
         # appends a new scope entry into he self.scopes list
         self.scopes.append({"variables":{},"methods":{},"classes":{},"parent":self.curr_scope})
+        if(addScopeLookup):
+            self.scope_lookup[str(addScopeLookup)+':'+str(self.curr_scope)] = self.next_scope
         self.curr_scope = self.next_scope
         self.next_scope += 1
 
@@ -52,18 +55,42 @@ class SymbolTable:
         # changes self.curr_scope to parent scope
         self.curr_scope = self.scopes[self.curr_scope]["parent"]
 
-    def lookup(self, symbol_type, symbol):
+    def lookup(self, symbol_type, symbol, resolveName = None):
         # searches for a symbol_type(variable, method etc.) and symbol and returns it's object.
         tmp_scope = self.curr_scope
-        while tmp_scope != -1:
-            if symbol in self.scopes[tmp_scope][symbol_type]:
-                return self.scopes[tmp_scope][symbol_type][symbol]
-            elif (symbol_type == 'variables'):
-                # This variable may be in the method parameters
-                for method in self.scopes[tmp_scope]['methods']:
-                    if(symbol in self.scopes[tmp_scope]['methods'][method]['parameters']):
-                        return self.scopes[tmp_scope]['methods'][method]['parameters'][symbol]
-            tmp_scope = self.scopes[tmp_scope]['parent']
+        if(resolveName == None):
+            while tmp_scope != -1:
+                if symbol in self.scopes[tmp_scope][symbol_type]:
+                    return self.scopes[tmp_scope][symbol_type][symbol]
+                elif (symbol_type == 'variables'):
+                    # This variable may be in the method parameters
+                    for method in self.scopes[tmp_scope]['methods']:
+                        if(symbol in self.scopes[tmp_scope]['methods'][method]['parameters']):
+                            return self.scopes[tmp_scope]['methods'][method]['parameters'][symbol]
+                tmp_scope = self.scopes[tmp_scope]['parent']
+        else:
+            assert(len(resolveName) > 0)
+            while tmp_scope != -1:
+                if resolveName[0] in self.scopes[tmp_scope]['classes']:
+                    break
+                tmp_scope = self.scopes[tmp_scope]["parent"]
+            if(tmp_scope != -1):
+                isErr = False
+                for i in range(1,len(resolveName)):
+                    tmp_scope = self.scope_lookup.get(str(resolveName[i-1])+':'+str(tmp_scope))
+                    if tmp_scope == None:
+                        isErr = True
+                    else:
+                        if(resolveName[i] not in self.scopes[tmp_scope]['classes']):
+                            isErr = True
+                if(isErr):
+                    return None
+                else:
+                    # lookup method/variable name in class
+                    tmp_scope = self.scope_lookup.get(str(resolveName[-1])+':'+str(tmp_scope))
+                    assert(tmp_scope != None)
+                    if symbol in self.scopes[tmp_scope][symbol_type]:
+                        return self.scopes[tmp_scope][symbol_type][symbol]
         return None
 
 
