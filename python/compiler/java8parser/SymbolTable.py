@@ -69,3 +69,6 @@ class SymbolTable:
 
     def getTemporary(self):
         return "__temp_" + str(self.tempCount)
+    
+    def errorHandler(self,symbol):
+        print(str(symbol)+" not found in SymbolTable")
