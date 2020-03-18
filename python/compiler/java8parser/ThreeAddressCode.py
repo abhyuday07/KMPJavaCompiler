@@ -22,14 +22,17 @@ class ThreeAddressCode:
     def __init__(self):
         self.labels = 0 #Number of labels
         self.code = [] #List of instructions
+        self.label_to_idx = {}
     
     def genLabel(self): #Generates new label
         newLabel = "L" + str(self.labels)
+        self.label_to_idx[newLabel] = len(self.code)
         self.labels += 1
         return newLabel
   
     def append(self, op1, op2, dest, operator):
         self.code.append([op1, op2, dest, operator])
+        return len(self.code) - 1
     
     def backpatch(self, list1, label):
         for x in list1:

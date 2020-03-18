@@ -1,11 +1,13 @@
 # Generated from java8.g4 by ANTLR 4.7.1
 from antlr4 import *
 if __name__ is not None and "." in __name__:
+	from .java8Lexer import java8Lexer
 	from .java8Parser import java8Parser
 	from .java8Visitor import java8Visitor
 else:
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
+	from java8Lexer import java8Lexer
 
 
 class firstPassTreeVisitor(java8Visitor):
@@ -16,7 +18,7 @@ class firstPassTreeVisitor(java8Visitor):
 		self.symTable = symTable
 	
 	def __isIdentifier__(self,ctx):
-		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == 102):
+		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == java8Lexer.Identifier):
 			return True
 		else:
 			return False

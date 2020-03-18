@@ -13,14 +13,17 @@ public class SimpleProgram {
 
 		int val = 0;
 		val = val++ + ++val;
-
-
-
+		int a = 11;
+		if(a==val){
+			val = val + a;
+		}
+		val = a==val?val+val:a+a;
+		a++;
 
 		// int val = 0;
 		// val++;
 		// val = ++val + ++val;
-		System.out.println(!z);
+		// System.out.println(!z);
 		// val += 1;
 		// System.out.println ("Inside main");
 		// funct1();
