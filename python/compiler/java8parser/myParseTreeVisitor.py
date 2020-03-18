@@ -79,6 +79,100 @@ class myParseTreeVisitor(java8Visitor):
 	def __errorHandler__(self, str):
 		raise Exception(str)
 
+	def __handleWhile__(self,ctx):
+		'''
+		whileStatement : WHILE '(' expression ')' statement
+		;
+		whileStatementNoShortIf : WHILE '(' expression ')' statementNoShortIf
+		;
+		'''
+		symTable.invokeScope(ctx)
+		children = self.__getChildren__(ctx)
+		expr_label = None
+		stmt_label = None
+		next_label = None
+		'''
+		expr_label : [code for expr]
+		if(expr) goto stmt_label
+		goto next_label
+		stmt_label: [code for stmt]
+		goto expr_label
+		next_label
+		'''
+		expr_label = tac.genLabel()
+		exprInfo = self.visitExpression(children[2])
+		jump_stmt = tac.append('','','',exprInfo['name'])
+		jump_out = tac.append('','','','goto')
+		stmt_label = tac.genLabel()
+		children[-1].accept(self)
+		tac.append('','',expr_label,'goto')
+		next_label = tac.genLabel()
+		tac.backpatch(exprInfo['true_list'],stmt_label)
+		tac.backpatch(exprInfo['false_list'],next_label)
+		tac.backpatch([jump_stmt],stmt_label)
+		tac.backpatch([jump_out],next_label)
+		
+		symTable.closeCurrScope()
+		return
+
+	def __handleFor__(self,ctx):
+		'''
+		basicForStatement : FOR '(' forInit? ';' expression? ';' forUpdate? ')' statement
+		;
+		basicForStatementNoShortIf : FOR '(' forInit? ';' expression? ';' forUpdate? ')' statementNoShortIf
+		;
+		'''
+		symTable.invokeScope(ctx)
+		children = self.__getChildren__(ctx)
+		expr_label = None
+		stmt_label = None
+		update_label = None # Used incase of continue
+		next_label = None
+		init_index = None
+		expr_index = None
+		update_index = None
+		# We will visit in order forInit label expression statement label forUpdate
+		for i in range(0,len(children)):
+			child = children[i]
+			if(isinstance(child,self.parser.ForInitContext)):
+				init_index = i
+			elif(isinstance(child,self.parser.ExpressionContext)):
+				expr_index = i
+			elif(isinstance(child,self.parser.ForUpdateContext)):
+				update_index = i
+
+		'''
+		[code for init]
+		expr_label : [code for expr]
+		if(expr) goto stmt_label
+		goto next_label
+		stmt_label: [code for stmt]
+		update_label:[code for update]
+		goto expr_label
+		next_label
+		'''
+		if init_index is not None:
+			self.visitForInit(children[init_index])
+		expr_label = tac.genLabel()
+		if expr_index is not None:
+			exprInfo = self.visitForInit(children[expr_index])
+			jump_stmt = tac.append('','','',exprInfo['name'])
+			jump_out = tac.append('','','','goto')
+		stmt_label = tac.genLabel()
+		children[-1].accept(self)
+		update_label = tac.genLabel()
+		if update_index is not None:
+			updateInfo = self.visitForUpdate(children[update_index])
+		tac.append('','',expr_label,'goto')
+		next_label = tac.genLabel()
+		tac.backpatch(exprInfo['true_list'],stmt_label)
+		tac.backpatch(exprInfo['false_list'],next_label)
+		tac.backpatch([jump_stmt],stmt_label)
+		tac.backpatch([jump_out],next_label)
+		symTable.closeCurrScope()
+		return
+
+
 	def visitNormalclassDeclaration(self, ctx:java8Parser.NormalclassDeclarationContext):
 		# normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
 		children = self.__getChildren__(ctx)
@@ -123,15 +217,9 @@ class myParseTreeVisitor(java8Visitor):
 		symTable.closeCurrScope()
 		return
 	def visitBasicForStatement(self, ctx:java8Parser.BasicForStatementContext):
-		symTable.invokeScope(ctx)
-		self.visitChildren(ctx)
-		symTable.closeCurrScope()
-		return
+		return self.__handleFor__(ctx)
 	def visitBasicForStatementNoShortIf(self, ctx:java8Parser.BasicForStatementNoShortIfContext):
-		symTable.invokeScope(ctx)
-		self.visitChildren(ctx)
-		symTable.closeCurrScope()
-		return
+		return self.__handleFor__(ctx)
 	def visitIfThenStatement(self, ctx:java8Parser.IfThenStatementContext):
 		'''
 		ifThenStatement : IF '(' expression ')' statement

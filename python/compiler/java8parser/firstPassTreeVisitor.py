@@ -107,7 +107,7 @@ class firstPassTreeVisitor(java8Visitor):
 		methodDeclarator : Identifier '(' formalParameterList? ')' dims?
 		'''
 		methodIdentifier = None
-		methodParameters = []
+		methodParameters = {}
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(self.__isIdentifier__(child)):

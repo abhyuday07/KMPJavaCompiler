@@ -1,8 +1,8 @@
 public class SimpleProgram {
 
-    // public static void funct1 () {
-	//     System.out.println ("Inside funct1");
-    // }
+    public static void funct1 () {
+	    // System.out.println ("Inside funct1");
+    }
 
     public static void main (String args[]) {
 		long a=1,b=2;
@@ -19,7 +19,14 @@ public class SimpleProgram {
 		}
 		val = a==val?val+val:a+a;
 		a++;
-
+		funct1();
+		for(int i=0; i<i; i++){
+			i=i;
+		}
+		int i;
+		while(i<i){
+			i=i;
+		}
 		// int val = 0;
 		// val++;
 		// val = ++val + ++val;
