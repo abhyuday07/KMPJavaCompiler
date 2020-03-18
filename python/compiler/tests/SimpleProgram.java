@@ -25,6 +25,7 @@ public class SimpleProgram {
 		}
 		int i;
 		while(i<i){
+			break;
 			i=i;
 		}
 		// int val = 0;

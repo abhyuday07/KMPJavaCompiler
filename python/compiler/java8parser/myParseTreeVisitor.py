@@ -104,16 +104,18 @@ class myParseTreeVisitor(java8Visitor):
 		jump_stmt = tac.append('','','',exprInfo['name'])
 		jump_out = tac.append('','','','goto')
 		stmt_label = tac.genLabel()
-		children[-1].accept(self)
+		stmtInfo = children[-1].accept(self)
+		# print(stmtInfo)
 		tac.append('','',expr_label,'goto')
 		next_label = tac.genLabel()
 		tac.backpatch(exprInfo['true_list'],stmt_label)
 		tac.backpatch(exprInfo['false_list'],next_label)
 		tac.backpatch([jump_stmt],stmt_label)
 		tac.backpatch([jump_out],next_label)
-		
+		tac.backpatch(stmtInfo['break_list'],next_label)
+		tac.backpatch(stmtInfo['continue_list'],expr_label)
 		symTable.closeCurrScope()
-		return
+		return {'break_list':[], 'continue_list':[]}
 
 	def __handleFor__(self,ctx):
 		'''
@@ -159,7 +161,7 @@ class myParseTreeVisitor(java8Visitor):
 			jump_stmt = tac.append('','','',exprInfo['name'])
 			jump_out = tac.append('','','','goto')
 		stmt_label = tac.genLabel()
-		children[-1].accept(self)
+		stmtInfo = children[-1].accept(self)
 		update_label = tac.genLabel()
 		if update_index is not None:
 			updateInfo = self.visitForUpdate(children[update_index])
@@ -169,9 +171,68 @@ class myParseTreeVisitor(java8Visitor):
 		tac.backpatch(exprInfo['false_list'],next_label)
 		tac.backpatch([jump_stmt],stmt_label)
 		tac.backpatch([jump_out],next_label)
+		tac.backpatch(stmtInfo['break_list'],next_label)
+		tac.backpatch(stmtInfo['continue_list'],update_label)
 		symTable.closeCurrScope()
-		return
+		return {'break_list':[], 'continue_list':[]}
 
+	def __handleStatement__(self,ctx):
+		'''
+		statement : statementWithoutTrailingSubstatement
+		|	labeledStatement
+		|	ifThenStatement
+		|	ifThenElseStatement
+		|	whileStatement
+		|	forStatement
+		;
+		statementNoShortIf : statementWithoutTrailingSubstatement
+		|	labeledStatementNoShortIf
+		|	ifThenElseStatementNoShortIf
+		|	whileStatementNoShortIf
+		|	forStatementNoShortIf
+		;
+		statementWithoutTrailingSubstatement : block
+		|	emptyStatement
+		|	expressionStatement
+		|	assertStatement
+		|	switchStatement
+		|	doStatement
+		|	breakStatement
+		|	continueStatement
+		|	returnStatement
+		|	synchronizedStatement
+		|	throwStatement
+		|	tryStatement
+		;
+		'''
+		children = self.__getChildren__(ctx)
+		assert(len(children)==1)
+		child = children[0]
+		stmtInfo = {
+			'break_list': [],
+			'continue_list' : []
+		}
+		if(isinstance(child,self.parser.BreakStatementContext)):
+			idx = self.visitBreakStatement(child)
+			stmtInfo['break_list'].append(idx)
+		elif(isinstance(child,self.parser.ContinueStatementContext)):
+			idx = self.visitContinueStatement(child)
+			stmtInfo['continue_list'].append(idx)
+		else:
+			ret = child.accept(self)
+			if ret is not None:
+				return ret
+		return stmtInfo
+	def visitBreakStatement(self,ctx:java8Parser.BreakStatementContext):
+		return tac.append('','','','goto')
+	def visitContinueStatement(self,ctx:java8Parser.ContinueStatementContext):
+		return tac.append('','','','goto')
+	def visitStatement(self,ctx:java8Parser.StatementContext):
+		return self.__handleStatement__(ctx)
+	def visitStatementNoShortIf(self,ctx:java8Parser.StatementNoShortIfContext):
+		return self.__handleStatement__(ctx)
+	def visitStatementWithoutTrailingSubstatement(self,ctx:java8Parser.StatementWithoutTrailingSubstatementContext):
+		return self.__handleStatement__(ctx)
 
 	def visitNormalclassDeclaration(self, ctx:java8Parser.NormalclassDeclarationContext):
 		# normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
@@ -201,21 +262,36 @@ class myParseTreeVisitor(java8Visitor):
 		return
 
 	def visitBlock(self, ctx:java8Parser.BlockContext):
+		'''
+		block : '{' blockStatements? '}'
+		'''
+		blockInfo = {'break_list':[], 'continue_list':[]}
 		symTable.invokeScope(ctx)
-		self.visitChildren(ctx)
+		if(ctx.getChildCount() == 3):
+			children = self.__getChildren__(ctx)
+			blockInfo = self.visitBlockStatements(children[1])
 		symTable.closeCurrScope()
-		return
+		return blockInfo
+	def visitBlockStatements(self,ctx:java8Parser.BlockStatementsContext):
+		'''
+		blockStatements : blockStatement blockStatement*
+		'''
+		children = self.__getChildren__(ctx)
+		break_list = []
+		continue_list = []
+		for child in children:
+			stmtInfo = self.visitBlockStatement(child)
+			if stmtInfo is not None:
+					if 'break_list' in stmtInfo and 'continue_list' in stmtInfo:
+						break_list += stmtInfo.get('break_list')
+						continue_list += stmtInfo.get('continue_list')
+		return {'break_list':break_list, 'continue_list':continue_list}
+
 
 	def visitWhileStatement(self, ctx:java8Parser.WhileStatementContext):
-		symTable.invokeScope(ctx)
-		self.visitChildren(ctx)
-		symTable.closeCurrScope()
-		return
+		return self.__handleWhile__(ctx)
 	def visitWhileStatementNoShortIf(self, ctx:java8Parser.WhileStatementNoShortIfContext):
-		symTable.invokeScope(ctx)
-		self.visitChildren(ctx)
-		symTable.closeCurrScope()
-		return
+		return self.__handleWhile__(ctx)
 	def visitBasicForStatement(self, ctx:java8Parser.BasicForStatementContext):
 		return self.__handleFor__(ctx)
 	def visitBasicForStatementNoShortIf(self, ctx:java8Parser.BasicForStatementNoShortIfContext):
@@ -242,7 +318,7 @@ class myParseTreeVisitor(java8Visitor):
 		tac.backpatch(exprInfo['false_list'],jump_label)
 		tac.backpatch([jump_idx],jump_label)
 		symTable.closeCurrScope()
-		return
+		return stmtInfo
 	def visitIfThenElseStatement(self, ctx:java8Parser.IfThenElseStatementContext):
 		symTable.invokeScope(ctx)
 		p = self.__getChildren__(ctx)
@@ -252,13 +328,14 @@ class myParseTreeVisitor(java8Visitor):
 		true_label = tac.genLabel()
 		tac.backpatch([true_idx],true_label)
 		tac.backpatch(exprInfo['true_list'],true_label)
-		stmtInfo = self.visitStatementNoShortIf(p[4])
+		stmtInfo1 = self.visitStatementNoShortIf(p[4])
 		jump_label = tac.genLabel()
 		tac.backpatch(exprInfo['false_list'],jump_label)
 		tac.backpatch([jump_idx],jump_label)
-		stmtInfo = self.visitStatement(p[6])
+		stmtInfo2 = self.visitStatement(p[6])
 		symTable.closeCurrScope()
-		return
+		return {'break_list':stmtInfo1['break_list']+stmtInfo1['break_list'],
+				'continue_list':stmtInfo2['continue_list' + stmtInfo2['continue_list']]}
 	def visitIfThenElseStatementNoShortIf(self, ctx:java8Parser.IfThenElseStatementNoShortIfContext):
 		symTable.invokeScope(ctx)
 		p = self.__getChildren__(ctx)
@@ -268,13 +345,14 @@ class myParseTreeVisitor(java8Visitor):
 		true_label = tac.genLabel()
 		tac.backpatch([true_idx],true_label)
 		tac.backpatch(exprInfo['true_list'],true_label)
-		stmtInfo = self.visitStatementNoShortIf(p[4])
+		stmtInfo1 = self.visitStatementNoShortIf(p[4])
 		jump_label = tac.genLabel()
 		tac.backpatch(exprInfo['false_list'],jump_label)
 		tac.backpatch([jump_idx],jump_label)
-		stmtInfo = self.visitStatementNoShortIf(p[6])
+		stmtInfo2 = self.visitStatementNoShortIf(p[6])
 		symTable.closeCurrScope()
-		return
+		return {'break_list':stmtInfo1['break_list']+stmtInfo1['break_list'],
+				'continue_list':stmtInfo2['continue_list' + stmtInfo2['continue_list']]}
 	def visitSwitchStatement(self, ctx:java8Parser.SwitchStatementContext):
 		symTable.invokeScope(ctx)
 		self.visitChildren(ctx)
@@ -644,7 +722,7 @@ class myParseTreeVisitor(java8Visitor):
 			idx = tac.append('','','','goto')
 			condExprLabel = tac.genLabel()
 			condExprInfo = self.visitConditionalExpression(p[4])
-			print('ci',condOrExprInfo,'ei',exprInfo)
+			# print('ci',condOrExprInfo,'ei',exprInfo)
 			tac.append(condOrExprInfo['name'],'',exprInfo['name'],'')
 			nextLabel = tac.genLabel()
 			tac.backpatch([idx],nextLabel)
@@ -780,6 +858,7 @@ class myParseTreeVisitor(java8Visitor):
 	def __handleBinaryExpressions__(self, ctx):
 		# Handles multiple binary expressions of form expr op expr.
 		children = self.__getChildren__(ctx)
+		# self.printSymbolTable()
 		if len(children) == 1:
 			p = self.__visitChildren__(ctx)
 			return p[0]
@@ -822,8 +901,8 @@ class myParseTreeVisitor(java8Visitor):
 				self.__errorHandler__(op + " defined only for int, long and double and float")
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
-			idx = tac.append('','','',temp)
-			return {'name':temp, 'type': 'boolean', 'true_list': [idx], 'false_list':[]}
+			# idx = tac.append('','','',temp)
+			return {'name':temp, 'type': 'boolean', 'true_list': [], 'false_list':[]}
 		elif op == 'instanceof':
 			#TODO: check symbol table and inheritance hierarchy and return value here itself.
 			pass
