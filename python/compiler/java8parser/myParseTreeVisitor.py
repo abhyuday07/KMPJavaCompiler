@@ -403,7 +403,7 @@ class myParseTreeVisitor(java8Visitor):
 					self.__errorHandler__("- defined only for int, long, float and double")
 				temp = symTable.getTemporary()
 				tac.append(c['name'], None, temp, 'neg')
-				return {'name':temp, 'type':c['type']}
+				return {'name':temp, 'type':c['type'],'true_list': [], 'false_list':[]}
 			else: # Rule 3
 				return self.visitUnaryExpression(children[1])
 		assert(False) #Shouldn't reach here
@@ -419,7 +419,7 @@ class myParseTreeVisitor(java8Visitor):
 		if c.get('type') not in ['long', 'float', 'int', 'double']:
 			self.__errorHandler__("++ defined only for int, long, float and double")
 		tac.append(c['name'],1,c['name'],'+')
-		return {'name': c['name'], 'type':c['type']}
+		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#preDecrementExpression.
 	def visitPreDecrementExpression(self, ctx:java8Parser.PreDecrementExpressionContext):
@@ -433,7 +433,7 @@ class myParseTreeVisitor(java8Visitor):
 
 		c = self.visitUnaryExpression(children[1])
 		tac.append(c['name'],1,c['name'],'-')
-		return {'name': c['name'], 'type':c['type']}
+		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#postIncrementExpression.
 	def visitPostIncrementExpression(self, ctx:java8Parser.PostIncrementExpressionContext):
@@ -446,7 +446,7 @@ class myParseTreeVisitor(java8Visitor):
 		tempname = symTable.getTemporary()
 		tac.append(childResult['name'], None, tempname, '=' )
 		tac.append(childResult['name'], 1, childResult['name'], '+' )
-		return {'name':tempname, 'type':childResult['type']}
+		return {'name':tempname, 'type':childResult['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#postDecrementExpression.
 	def visitPostDecrementExpression(self, ctx:java8Parser.PostDecrementExpressionContext):
@@ -459,7 +459,7 @@ class myParseTreeVisitor(java8Visitor):
 		tempname = symTable.getTemporary()
 		tac.append(childResult['name'], None, tempname, '=' )
 		tac.append(childResult['name'], 1, childResult['name'], '-' )
-		return {'name':tempname, 'type':childResult['type']}
+		return {'name':tempname, 'type':childResult['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#postfixExpression.
 	def visitPostfixExpression(self, ctx:java8Parser.PostfixExpressionContext):
@@ -502,7 +502,7 @@ class myParseTreeVisitor(java8Visitor):
 			if c['type'] != 'boolean':
 				self.__errorHandler__("~ defined only for boolean")
 			tac.append(c['name'], None, temp, 'invert') #Boolean invert !
-		return {'name': temp, 'type': c['type']}
+		return {'name': temp, 'type': c['type'],'true_list': [], 'false_list':[]}
 
 
 	# Visit a parse tree produced by java8Parser#expressionStatement.
@@ -647,6 +647,19 @@ class myParseTreeVisitor(java8Visitor):
 			# methodName '(' argumentList? ')'
 			symbol = children[0].getText()
 			methodInfo = symTable.lookup('methods',symbol)
+			argProvided = []
+			for child in children:
+				if(isinstance(child,self.parser.ArgumentListContext)):
+					argProvided = self.__visitChildren__(child)
+			if(len(methodInfo['parameters']) != len(argProvided)):
+				self.__errorHandler__("Number of arguments mismatch")
+			expParams = methodInfo['parameters']
+			for i in range(0,len(argProvided)):
+				if(methodInfo['parameters'][i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
+					self.__errorHandler__("Type of arguments mismatch")
+				else:
+					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
+			tac.append('','',symbol,'function')
 
 		elif(isinstance(children[0],self.parser.NameContext)):
 			# name '.' typeArguments? Identifier '(' argumentList? ')'
@@ -661,6 +674,19 @@ class myParseTreeVisitor(java8Visitor):
 				if(self.__isIdentifier__(child)):
 					symbol = child.getText()
 			methodInfo = symTable.lookup('methods',symbol,resolveName)
+			argProvided = []
+			for child in children:
+				if(isinstance(child,self.parser.ArgumentListContext)):
+					argProvided = self.__visitChildren__(child)
+			if(len(methodInfo['parameters']) != len(argProvided)):
+				self.__errorHandler__("Number of arguments mismatch")
+			expParams = methodInfo['parameters'].keys()
+			for i in range(0,len(argProvided)):
+				if(methodInfo['parameters'][i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
+					self.__errorHandler__("Type of arguments mismatch")
+				else:
+					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
+			tac.append('','',symbol,'function')
 		return
 
 	def __handleBinaryExpressions__(self, ctx):
