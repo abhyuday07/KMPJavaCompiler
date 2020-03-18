@@ -10,14 +10,18 @@ public class SimpleProgram {
 		a/=c;
 		c=a+b*c-d;
 		c = a*b/c + d^c + a>>b;
+		boolean x = a+b < c-d;
+		if(a-c+d > a*b+c*a && b>c || c+d>0){
+			a++;
+		}
 
 		int val = 0;
 		val = val++ + ++val;
-		int a = 11;
-		if(a==val){
-			val = val + a;
+		int a1 = 11;
+		if(a1==val){
+			val = val + a1;
 		}
-		val = a==val?val+val:a+a;
+		val = a1==val?val+val:a1+a1;
 		a++;
 		funct1();
 		for(int i=0; i<i; i++){

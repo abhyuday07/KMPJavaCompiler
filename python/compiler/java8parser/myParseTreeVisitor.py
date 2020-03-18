@@ -973,23 +973,19 @@ class myParseTreeVisitor(java8Visitor):
 	def __handleBinaryExpressions__(self, ctx):
 		# Handles multiple binary expressions of form expr op expr.
 		children = self.__getChildren__(ctx)
-		# self.printSymbolTable()
 		if len(children) == 1:
 			p = self.__visitChildren__(ctx)
 			return p[0]
 		op = children[1].getText()
 		if op not in ['||','&&']:
 			p = self.__visitChildren__(ctx)
-		assert(len(p) == 3)
-		if op not in ['||','&&']:
-			# print(p)
+			assert(len(p) == 3)
 			commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
 		if op == '||' or op == '&&':
-			#TODO: Add code for truelist/falselist.
 			lhs = children[0].accept(self)
 			true_idx = []
 			false_idx = []
-			if(lhs['type'] != 'bool'):
+			if(lhs['type'] != 'boolean'):
 				self.__errorHandler__(op + " defined only for boolean")
 			if(op == '||'):
 				true_idx.append(tac.append('','','',lhs['name']))
@@ -997,13 +993,13 @@ class myParseTreeVisitor(java8Visitor):
 				temp = symTable.getTemporary()
 				tac.append(temp,'',lhs['name'],'!')
 				false_idx.append(tac.append('','','',lhs['name']))
-			rhs = children[0].accept(self)
-			if(rhs['type'] != 'bool'):
+			rhs = children[2].accept(self)
+			if(rhs['type'] != 'boolean'):
 				self.__errorHandler__(op + " defined only for boolean")
 			tac.append(rhs['name'],'',lhs['name'],'')
-			return {'name': lhs[name], 'type':'boolean','true_list': 
-					true_idx + lhs['true_list'] + rhs['true'],
-					'false_list': false_idx + lhs['false_list']+rhs['false_idx']}
+			return {'name': lhs['name'], 'type':'boolean','true_list': 
+					true_idx + lhs['true_list'] + rhs['true_list'],
+					'false_list': false_idx + lhs['false_list']+rhs['false_list']}
 
 		elif op in ['^', '|', '&']: # Bitwise ops
 			if commonType not in ['int', 'boolean', 'long']:
@@ -1033,7 +1029,6 @@ class myParseTreeVisitor(java8Visitor):
 			#May need to send different operators for each type as assembly instructions are diff. Will look at this later.
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
-			# print({'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]})
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		assert(False)
 				
