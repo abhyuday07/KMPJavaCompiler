@@ -311,3 +311,8 @@ class firstPassTreeVisitor(java8Visitor):
 		self.visitChildren(ctx)
 		self.symTable.closeCurrScope()
 		return
+	def visitDoStatement(self,ctx:java8Parser.DoStatementContext):
+		self.symTable.createNewScope(addScopeLookup=ctx)
+		self.visitChildren(ctx)
+		self.symTable.closeCurrScope()
+		return

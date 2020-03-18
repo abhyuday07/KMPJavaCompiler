@@ -116,7 +116,30 @@ class myParseTreeVisitor(java8Visitor):
 		tac.backpatch(stmtInfo['continue_list'],expr_label)
 		symTable.closeCurrScope()
 		return {'break_list':[], 'continue_list':[]}
-
+	def visitDoStatement(self,ctx:java8Parser.DoStatementContext):
+		'''
+		doStatement : DO statement WHILE '(' expression ')' ';'
+		;
+		'''
+		symTable.invokeScope(ctx)
+		children = self.__getChildren__(ctx)
+		'''
+		stmt_label : [code for stmt]
+		expr_label : [code for expr]
+		next_label
+		'''
+		stmt_label = tac.genLabel()
+		stmtInfo = children[1].accept(self)
+		expr_label = tac.genLabel()
+		exprInfo = self.visitExpression(children[4])
+		tac.append('','',stmt_label,exprInfo['name'])
+		next_label = tac.genLabel()
+		tac.backpatch(exprInfo['true_list'],stmt_label)
+		tac.backpatch(exprInfo['false_list'],next_label)
+		tac.backpatch(stmtInfo['break_list'],next_label)
+		tac.backpatch(stmtInfo['continue_list'],expr_label)
+		symTable.closeCurrScope()
+		return {'break_list':[], 'continue_list':[]}
 	def __handleFor__(self,ctx):
 		'''
 		basicForStatement : FOR '(' forInit? ';' expression? ';' forUpdate? ')' statement

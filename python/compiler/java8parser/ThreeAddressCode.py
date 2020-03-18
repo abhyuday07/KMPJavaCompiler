@@ -23,10 +23,14 @@ class ThreeAddressCode:
         self.labels = 0 #Number of labels
         self.code = [] #List of instructions
         self.label_to_idx = {}
+        self.idx_to_label = {}
     
     def genLabel(self): #Generates new label
+        if(len(self.code) in self.idx_to_label):
+            return self.idx_to_label[len(self.code)]
         newLabel = "L" + str(self.labels)
         self.label_to_idx[newLabel] = len(self.code)
+        self.idx_to_label[len(self.code)] = newLabel
         self.labels += 1
         return newLabel
   
