@@ -1,11 +1,13 @@
 # Generated from java8.g4 by ANTLR 4.7.1
 from antlr4 import *
 if __name__ is not None and "." in __name__:
+	from .java8Lexer import java8Lexer
 	from .java8Parser import java8Parser
 	from .java8Visitor import java8Visitor
 	from .ThreeAddressCode import *
 	from .firstPassTreeVisitor import firstPassTreeVisitor
 else:
+	from java8Lexer import java8Lexer
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
 	from firstPassTreeVisitor import firstPassTreeVisitor
@@ -36,7 +38,8 @@ class myParseTreeVisitor(java8Visitor):
 		fpTreeVisitor.visit(tree)
 	
 	def __isIdentifier__(self,ctx):
-		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == 102):
+		
+		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == java8Lexer.Identifier):
 			return True
 		else:
 			return False
@@ -571,7 +574,6 @@ class myParseTreeVisitor(java8Visitor):
 			# methodName '(' argumentList? ')'
 			symbol = children[0].getText()
 			methodInfo = symTable.lookup('methods',symbol)
-			# print(symbol,methodInfo)
 
 		elif(isinstance(children[0],self.parser.NameContext)):
 			# name '.' typeArguments? Identifier '(' argumentList? ')'
@@ -586,7 +588,6 @@ class myParseTreeVisitor(java8Visitor):
 				if(self.__isIdentifier__(child)):
 					symbol = child.getText()
 			methodInfo = symTable.lookup('methods',symbol,resolveName)
-			# print(symbol,methodInfo)
 		return
 
 	def __handleBinaryExpressions__(self, ctx):
@@ -595,11 +596,8 @@ class myParseTreeVisitor(java8Visitor):
 		children = self.__getChildren__(ctx)
 		if len(p) == 1:
 			return p[0]
-		print(len(p))
-		print(ctx.getText())
 		assert(len(p) == 3)
 		op = children[1].getText()
-		print(ctx.getText())
 		commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
 		if op == '||' or op == '&&':
 			#TODO: Add code for truelist/falselist.

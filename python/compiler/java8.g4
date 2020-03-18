@@ -769,9 +769,9 @@ relationalExpression : shiftExpression
                      ;
 
 shiftExpression : additiveExpression
-                | shiftExpression '<' '<' additiveExpression
-                | shiftExpression '>' '>' additiveExpression
-                | shiftExpression '>' '>' '>' additiveExpression
+                | shiftExpression '<<' additiveExpression
+                | shiftExpression '>>' additiveExpression
+                | shiftExpression '>>>' additiveExpression
                 ;
 
 additiveExpression : multiplicativeExpression

@@ -9,8 +9,10 @@ public class SimpleProgram {
 		long c=3,d=4;
 		a/=c;
 		c=a+b*c-d;
-		d=a<<(c|d);
-		d=a>>>(c|d);
+		c = a*b/c + d^c + a>>b;
+
+		int val = 0;
+		val = val++ + ++val;
 
 
 

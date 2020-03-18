@@ -19,7 +19,7 @@ class SymbolTable:
         self.curr_scope = 0
         self.next_scope = 1
         self.offset = 0
-        self.tempCount = 1
+        self.tempCount = 0
         self.scope_lookup = {}
         self.node_to_table = {}
 
@@ -100,6 +100,7 @@ class SymbolTable:
 
 
     def getTemporary(self):
+        self.tempCount += 1
         return "__temp_" + str(self.tempCount)
     
     def errorHandler(self,symbol):
