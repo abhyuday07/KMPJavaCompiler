@@ -939,5 +939,17 @@ class myParseTreeVisitor(java8Visitor):
 		dot.render('graph',view=True)
 
 	def printTAC(self):
-		print('op1\t\top2\t\tdest\t\toperator')
-		print('\n'.join(['\t\t'.join([str(cell) for cell in row]) for row in tac.code]))
+		print('Sno\t\tlabel\t\top1\t\top2\t\tdest\t\toperator')
+		idx_to_label = {}
+		for i in range(0,tac.labels):
+			label = "L" + str(i)
+			idx_to_label[tac.label_to_idx[label]] = label
+		# print(idx_to_label)
+		for i in range(0,len(tac.code)):
+			str_out = "" + str(i)+"\t\t"
+			if(idx_to_label.get(i) is not None):
+				str_out += idx_to_label[i]
+			str_out += "\t\t"
+			# print(tac.code[i])
+			str_out += "\t\t".join([str(cell) for cell in tac.code[i]])
+			print(str_out)
