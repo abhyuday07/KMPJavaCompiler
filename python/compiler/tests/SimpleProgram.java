@@ -5,15 +5,20 @@ public class SimpleProgram {
     // }
 
     public static void main (String args[]) {
-		int a=0,b=1,c=2;
-		int d=a+b;
-		c=a;
-		b/=d;
-		a++;
+		long a=1,b=2;
+		long c=3,d=4;
+		a/=c;
+		c=a+b*c-d;
+		d=a<<(c|d);
+		d=a>>>(c|d);
+
+
+
+
 		// int val = 0;
 		// val++;
 		// val = ++val + ++val;
-		System.out.println(a=100);
+		System.out.println(!z);
 		// val += 1;
 		// System.out.println ("Inside main");
 		// funct1();

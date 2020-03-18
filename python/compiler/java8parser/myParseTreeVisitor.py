@@ -356,48 +356,67 @@ class myParseTreeVisitor(java8Visitor):
 		elif isinstance(children[1], self.parser.UnaryExpressionContext):
 			if children[0].getText() == '-':	#Rule 4
 				c = self.visitUnaryExpression(children[1])
+				if c['type'] not in ['float', 'double', 'long', 'int']:
+					self.__errorHandler__("- defined only for int, long, float and double")
 				temp = symTable.getTemporary()
 				tac.append(c['name'], None, temp, 'neg')
+				return {'name':temp, 'type':c['type']}
 			else: # Rule 3
 				return self.visitUnaryExpression(children[1])
-		return {}
+		assert(False) #Shouldn't reach here
 
 	# Visit a parse tree produced by java8Parser#preIncrementExpression.
 	def visitPreIncrementExpression(self, ctx:java8Parser.PreIncrementExpressionContext):
 		'''
 		preIncrementExpression : '++' unaryExpression
-        ;
+		;
 		'''
 		children = self.__getChildren__(ctx)
 		c = self.visitUnaryExpression(children[1])
+		if c.get('type') not in ['long', 'float', 'int', 'double']:
+			self.__errorHandler__("++ defined only for int, long, float and double")
 		tac.append(c['name'],1,c['name'],'+')
-		return {'name': c['name']}
+		return {'name': c['name'], 'type':c['type']}
 
 	# Visit a parse tree produced by java8Parser#preDecrementExpression.
 	def visitPreDecrementExpression(self, ctx:java8Parser.PreDecrementExpressionContext):
 		'''
 		preDecrementExpression : '--' unaryExpression
-        ;
+		;
 		'''
 		children = self.__getChildren__(ctx)
+		if c.get('type') not in ['long', 'float', 'int', 'double']:
+			self.__errorHandler__("++ defined only for int, long, float and double")
+
 		c = self.visitUnaryExpression(children[1])
 		tac.append(c['name'],1,c['name'],'-')
-		return {'name': c['name']}
+		return {'name': c['name'], 'type':c['type']}
 
 	# Visit a parse tree produced by java8Parser#postIncrementExpression.
 	def visitPostIncrementExpression(self, ctx:java8Parser.PostIncrementExpressionContext):
 		'''
 		postIncrementExpression: postfixExpression '++'
-	    ;
+		;
 		'''
-		returnobj = {}
 		child = self.__getChildren__(ctx)[0]
 		childResult = self.visitPostfixExpression(child)
 		tempname = symTable.getTemporary()
 		tac.append(childResult['name'], None, tempname, '=' )
 		tac.append(childResult['name'], 1, childResult['name'], '+' )
-		returnobj['name'] = tempname
-		return returnobj
+		return {'name':tempname, 'type':childResult['type']}
+
+	# Visit a parse tree produced by java8Parser#postDecrementExpression.
+	def visitPostDecrementExpression(self, ctx:java8Parser.PostDecrementExpressionContext):
+		'''
+		postDecrementExpression: postfixExpression '--'
+		;
+		'''
+		child = self.__getChildren__(ctx)[0]
+		childResult = self.visitPostfixExpression(child)
+		tempname = symTable.getTemporary()
+		tac.append(childResult['name'], None, tempname, '=' )
+		tac.append(childResult['name'], 1, childResult['name'], '-' )
+		return {'name':tempname, 'type':childResult['type']}
 
 	# Visit a parse tree produced by java8Parser#postfixExpression.
 	def visitPostfixExpression(self, ctx:java8Parser.PostfixExpressionContext):
@@ -408,7 +427,7 @@ class myParseTreeVisitor(java8Visitor):
 		(	postIncrementExpression__1__postfixExpression
 		|	postDecrementExpression__1__postfixExpression
 		)*
-	    ;
+		;
 		'''
 		children = self.__getChildren__(ctx)
 		if(isinstance(children[0], self.parser.NameContext)):
@@ -419,23 +438,28 @@ class myParseTreeVisitor(java8Visitor):
 	def visitUnaryExpressionNotPlusMinus(self, ctx:java8Parser.UnaryExpressionNotPlusMinusContext):
 		'''
 		unaryExpressionNotPlusMinus : postfixExpression
-                            | '~' unaryExpression
-                            | '!' unaryExpression
-                            | castExpression
-                            ;
+							| '~' unaryExpression
+							| '!' unaryExpression
+							| castExpression
+							;
 		'''
 		children = self.__getChildren__(ctx)
 		if isinstance(children[0],self.parser.PostfixExpressionContext):
 			return self.visitPostfixExpression(children[0])
 		elif isinstance(children[0], self.parser.CastExpressionContext):
+			#TODO: Write function for castExpression
 			return self.visitCastExpression(children[0])
 		c = self.visitUnaryExpression(children[1])
 		temp = symTable.getTemporary()
 		if children[0].getText() == '~':
+			if c['type'] not in ['int', 'long']:
+				self.__errorHandler__("~ defined only for int, long")
 			tac.append(c['name'], None, temp, 'complement') #Bitwise complement of an integer ~
 		else:
+			if c['type'] != 'boolean':
+				self.__errorHandler__("~ defined only for boolean")
 			tac.append(c['name'], None, temp, 'invert') #Boolean invert !
-		return {'name': temp}
+		return {'name': temp, 'type': c['type']}
 
 
 	# Visit a parse tree produced by java8Parser#expressionStatement.
@@ -472,17 +496,48 @@ class myParseTreeVisitor(java8Visitor):
 
 	# Visit a parse tree produced by java8Parser#conditionalExpression.
 	def visitConditionalExpression(self, ctx:java8Parser.ConditionalExpressionContext):
-		'''
-		conditionalExpression : conditionalOrExpression
-                      | conditionalOrExpression '?' expression ':' conditionalExpression
-                      ;
-		'''
-		#TODO: Complete this function.
-		childrenResult =  self.visitChildren(ctx)
-		if childrenResult and 'name' in childrenResult and 'type' in childrenResult:
-			return childrenResult
-		return {'type':'boolean', 'name':'MUSTNOTEXECUTE'}
-	
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#conditionalOrExpression.
+	def visitConditionalOrExpression(self, ctx:java8Parser.ConditionalOrExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+		# Visit a parse tree produced by java8Parser#conditionalAndExpression.
+	def visitConditionalAndExpression(self, ctx:java8Parser.ConditionalAndExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#inclusiveOrExpression.
+	def visitInclusiveOrExpression(self, ctx:java8Parser.InclusiveOrExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#exclusiveOrExpression.
+	def visitExclusiveOrExpression(self, ctx:java8Parser.ExclusiveOrExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#andExpression.
+	def visitAndExpression(self, ctx:java8Parser.AndExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#equalityExpression.
+	def visitEqualityExpression(self, ctx:java8Parser.EqualityExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#relationalExpression.
+	def visitRelationalExpression(self, ctx:java8Parser.RelationalExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#shiftExpression.
+	def visitShiftExpression(self, ctx:java8Parser.ShiftExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#additiveExpression.
+	def visitAdditiveExpression(self, ctx:java8Parser.AdditiveExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
+	# Visit a parse tree produced by java8Parser#multiplicativeExpression.
+	def visitMultiplicativeExpression(self, ctx:java8Parser.MultiplicativeExpressionContext):
+		return self.__handleBinaryExpressions__(ctx)
+
 	# Visit a parse tree produced by java8Parser#name.
 	def visitName(self, ctx:java8Parser.NameContext):
 		'''
@@ -504,12 +559,12 @@ class myParseTreeVisitor(java8Visitor):
 	def __handleMethods__(self,ctx):
 		'''
 		methodInvocation:	methodName '(' argumentList? ')'
-	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	primary '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	SUPER '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
-	    ;
+		|	name '.' typeArguments? Identifier '(' argumentList? ')'
+		|	name '.' typeArguments? Identifier '(' argumentList? ')'
+		|	primary '.' typeArguments? Identifier '(' argumentList? ')'
+		|	SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+		|	name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+		;
 		'''
 		children = self.__getChildren__(ctx)
 		if(isinstance(children[0],self.parser.MethodNameContext)):
@@ -532,8 +587,53 @@ class myParseTreeVisitor(java8Visitor):
 					symbol = child.getText()
 			methodInfo = symTable.lookup('methods',symbol,resolveName)
 			# print(symbol,methodInfo)
-
 		return
+
+	def __handleBinaryExpressions__(self, ctx):
+		# Handles multiple binary expressions of form expr op expr.
+		p = self.__visitChildren__(ctx)
+		children = self.__getChildren__(ctx)
+		if len(p) == 1:
+			return p[0]
+		print(len(p))
+		print(ctx.getText())
+		assert(len(p) == 3)
+		op = children[1].getText()
+		print(ctx.getText())
+		commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
+		if op == '||' or op == '&&':
+			#TODO: Add code for truelist/falselist.
+			pass
+		elif op in ['^', '|', '&']: # Bitwise ops
+			if commonType not in ['int', 'boolean', 'long']:
+				self.__errorHandler__(op + " defined only for int, long and boolean")
+			temp = symTable.getTemporary()
+			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			return {'name':temp, 'type': commonType}
+		elif op in ['<', '>', '<=', '>=']: #Relational operators
+			if commonType not in ['int', 'long', 'double', 'float']:
+				self.__errorHandler__(op + " defined only for int, long and double and float")
+			temp = symTable.getTemporary()
+			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			return {'name':temp, 'type': 'boolean'}
+		elif op == 'instanceof':
+			#TODO: check symbol table and inheritance hierarchy and return value here itself.
+			pass
+		elif op in ['>>>', '<<', '>>']: # Shift operators
+			if commonType not in ['int', 'long']:
+				self.__errorHandler__(op + " defined only for int and long")
+			temp = symTable.getTemporary()
+			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			return {'name':temp, 'type': commonType}
+		elif op in ['+', '-', '/', '*', '%']:
+			if commonType not in ['int', 'long' , 'double', 'float']:
+				self.__errorHandler__(op + " defined only for int, long, float and double")
+			#May need to send different operators for each type as assembly instructions are diff. Will look at this later.
+			temp = symTable.getTemporary()
+			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			return {'name':temp, 'type': commonType}
+	
+				
 
 	def visitMethodInvocation(self, ctx: java8Parser.MethodInvocationContext):
 		return self.__handleMethods__(ctx)
