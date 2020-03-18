@@ -28,6 +28,14 @@ public class SimpleProgram {
 			break;
 			i=i;
 		}
+		do{
+			i++;
+		}while(i<i);
+		switch(i){
+			case i: i++;
+			break;
+			default: i++;
+		}
 		// int val = 0;
 		// val++;
 		// val = ++val + ++val;

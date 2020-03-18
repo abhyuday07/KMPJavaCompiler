@@ -377,10 +377,102 @@ class myParseTreeVisitor(java8Visitor):
 		return {'break_list':stmtInfo1['break_list']+stmtInfo1['break_list'],
 				'continue_list':stmtInfo2['continue_list' + stmtInfo2['continue_list']]}
 	def visitSwitchStatement(self, ctx:java8Parser.SwitchStatementContext):
+		'''
+		switchStatement : SWITCH '(' expression ')' switchBlock
+		'''
 		symTable.invokeScope(ctx)
-		self.visitChildren(ctx)
+		children = self.__getChildren__(ctx)
+		exprInfo = self.visitExpression(children[2])
+		switch_label = tac.genLabel()
+		# This will ensure short circuit incase of boolean expression
+		tac.backpatch(exprInfo['true_list'],switch_label)
+		tac.backpatch(exprInfo['false_list'],switch_label)
+		end_idx = tac.append('','','','goto')
+		'''
+		[code for expr]
+		switch_label : goto end_label
+		label_1 : [code for blockStatement1]
+		label_2 : [code for blockStatement2]
+		.
+		.
+		.
+		label_n : [code for blockStatement_n]
+		goto next_label
+		end_label : if(case1) jump label_1
+		if(case2) jump label_2
+		.
+		.
+		jump label_default
+		next_label
+		'''
+		# switchInfo['cases'] stores array of (ctx,label_i)
+		switchInfo = self.visitSwitchBlock(children[4])
+		next_idx = tac.append('','','','goto')
+		end_label = tac.genLabel()
+		tac.backpatch([end_idx],end_label)
+		# Assume switchInfo returns a dict additionally storing
+		'''
+		switchLabel : CASE constantExpression ':'
+		|	DEFAULT ':'
+		;
+		'''
+		for switchLabel, label in switchInfo['cases']:
+			children = self.__getChildren__(switchLabel)
+			if(len(children) == 2):
+				# DEFAULT
+				tac.append('','',label,'goto')
+			else:
+				# Case
+				exprInfo = children[1].accept(self)
+				tac.append('','',label,exprInfo['name'])
+				tac.backpatch(exprInfo['true_list'],label)
+				tac.backpatch(exprInfo['false_list'],tac.genLabel())
+		next_label = tac.genLabel()
+		tac.backpatch(switchInfo['break_list'],next_label)
+		tac.backpatch([next_idx],next_label)
 		symTable.closeCurrScope()
-		return
+		return {'break_list' : [], 'continue_list': switchInfo['continue_list']}
+
+	def visitSwitchBlock(self,ctx:java8Parser.SwitchBlockContext):
+		'''
+		switchBlock : '{' switchBlockStatementGroup* switchLabel* '}'
+		;
+		'''
+		cases = []
+		break_list = []
+		continue_list = []
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.SwitchBlockStatementGroupContext)):
+				bsGroupInfo = self.visitSwitchBlockStatementGroup(child)
+				cases += bsGroupInfo['cases']
+				break_list += bsGroupInfo['break_list']
+				continue_list += bsGroupInfo['continue_list']
+			if(isinstance(child,self.parser.SwitchLabelContext)):
+				cases += [(child,tac.genLabel())]
+		return {'cases':cases, 'break_list':break_list, 'continue_list':continue_list}
+
+	def visitSwitchBlockStatementGroup(self,ctx:java8Parser.SwitchBlockStatementGroupContext):
+		'''
+		switchBlockStatementGroup : switchLabels blockStatements
+		;
+		switchLabels : switchLabel switchLabel*
+		;
+		switchLabel : CASE constantExpression ':'
+		|	DEFAULT ':'
+		;
+		'''
+		# I know its a bit confusing
+		# 
+		children = self.__getChildren__(ctx)
+		switchLabels = self.__getChildren__(children[0])
+		label_to_jump = tac.genLabel()
+		stmtInfo = self.visitBlockStatements(children[1])
+		bsGroupInfo = stmtInfo.copy()
+		bsGroupInfo['cases'] = []
+		for switchLabel in switchLabels:
+			bsGroupInfo['cases'].append((switchLabel,label_to_jump))
+		return bsGroupInfo
 
 	def visitLocalVariableDeclaration(self, ctx:java8Parser.LocalVariableDeclarationContext):
 		'''
