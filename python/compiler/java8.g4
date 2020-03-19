@@ -551,26 +551,27 @@ primary: (	primaryNoNewArray__2__primary
 		)*
 	    ;
 
-primaryNoNewArray: literal
-        | name ('[' ']')* '.' CLASS
-        | VOID '.' CLASS
-        | THIS
-        | name '.' THIS
-        | '(' expression ')'
-        | classInstanceCreationExpression
-        | fieldAccess
-        | arrayAccess
-        | methodInvocation
-        ;
+// THIS NON TERMINAL DOESN'T APPEAR ANYWHERE ON RHS.
+// primaryNoNewArray: literal
+//         // | name ('[' ']')* '.' CLASS
+//         // | VOID '.' CLASS
+//         | THIS
+//         // | name '.' THIS
+//         | '(' expression ')'
+//         | classInstanceCreationExpression
+//         | fieldAccess
+//         | arrayAccess
+//         | methodInvocation
+//         ;
 
 primaryNoNewArray__1__arrayAccess :
 	;
 
 primaryNoNewArray__2__arrayAccess:	literal
-	    |	name ('[' ']')* '.' CLASS
-	    |	VOID '.' CLASS
+	    // |	name ('[' ']')* '.' CLASS
+	    // |	VOID '.' CLASS
 	    |	THIS
-	    |	name '.' THIS
+	    // |	name '.' THIS
 	    |	'(' expression ')'
 	    |	classInstanceCreationExpression
 	    |	fieldAccess
@@ -592,11 +593,11 @@ primaryNoNewArray__1__primary__2__arrayAccess__1__primary: classInstanceCreation
     	;
 
 primaryNoNewArray__2__primary:	literal
-    	|	name ('[' ']')* '.' CLASS
-    	|	unannPrimitiveType ('[' ']')* '.' CLASS
-    	|	VOID '.' CLASS
+    	// |	name ('[' ']')* '.' CLASS
+    	// |	unannPrimitiveType ('[' ']')* '.' CLASS
+    	// |	VOID '.' CLASS
     	|	THIS
-    	|	name '.' THIS
+    	// |	name '.' THIS
     	|	'(' expression ')'
     	|	classInstanceCreationExpression__2__primary
     	|	fieldAccess__2__primary
@@ -608,11 +609,11 @@ primaryNoNewArray__2__primary__1__arrayAccess__2__primary:
 	    ;
 
 primaryNoNewArray__2__primary__2__arrayAccess__2__primary:	literal
-    	|	name ('[' ']')* '.' CLASS
-    	|	unannPrimitiveType ('[' ']')* '.' CLASS
-    	|	VOID '.' CLASS
+    	// |	name ('[' ']')* '.' CLASS
+    	// |	unannPrimitiveType ('[' ']')* '.' CLASS
+    	// |	VOID '.' CLASS
     	|	THIS
-    	|	name '.' THIS
+    	// |	name '.' THIS
     	|	'(' expression ')'
     	|	classInstanceCreationExpression__2__primary
     	|	fieldAccess__2__primary

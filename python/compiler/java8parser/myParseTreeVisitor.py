@@ -105,7 +105,6 @@ class myParseTreeVisitor(java8Visitor):
 		jump_out = tac.append('','','','goto')
 		stmt_label = tac.genLabel()
 		stmtInfo = children[-1].accept(self)
-		# print(stmtInfo)
 		tac.append('','',expr_label,'goto')
 		next_label = tac.genLabel()
 		tac.backpatch(exprInfo['true_list'],stmt_label)
@@ -837,7 +836,6 @@ class myParseTreeVisitor(java8Visitor):
 			idx = tac.append('','','','goto')
 			condExprLabel = tac.genLabel()
 			condExprInfo = self.visitConditionalExpression(p[4])
-			# print('ci',condOrExprInfo,'ei',exprInfo)
 			tac.append(condOrExprInfo['name'],'',exprInfo['name'],'')
 			nextLabel = tac.genLabel()
 			tac.backpatch([idx],nextLabel)
@@ -912,6 +910,64 @@ class myParseTreeVisitor(java8Visitor):
 				return nameInfo
 			symTable.errorHandler(symbol)
 		return self.visitChildren(ctx)
+
+
+	# Visit a parse tree produced by java8Parser#literal.
+	def visitLiteral(self, ctx:java8Parser.LiteralContext):
+		# Currently implementing this by copying it's text into a temporary variable in tac and returning name of temporary variable.
+		'''
+		literal : IntegerLiteral
+        | FloatingPointLiteral
+        | BooleanLiteral
+        | CharacterLiteral
+        | StringLiteral
+        | NullLiteral
+        ;
+		'''
+		child = ctx.getChild(0)
+		childType = child.getSymbol().type
+		text = ctx.getText()
+		temp = symTable.getTemporary()
+		if childType == java8Lexer.IntegerLiteral:
+			if text[-1] == 'l' or text[-1] == 'L': #long
+				tac.append(int(text[:-1]), None, temp, '=') #Wishlist: Assuming only integer literals. Binary,octal and hex not handled.
+				return {'name' : temp, 'type': 'long'}
+			else:
+				tac.append(int(text), None, temp, '=')
+				return {'name' : temp, 'type': 'int'}
+		elif childType == java8Lexer.FloatingPointLiteral:
+			if text[-1] == 'f' or text[-1] == 'F': #float
+				tac.append(float(text[:-1]), None, temp, '=') 
+				return {'name': temp, 'type': 'float'}
+			else:
+				tac.append(float(text), None, temp, '=')
+				return {'name': temp, 'type': 'double'}
+		elif childType == java8Lexer.BooleanLiteral: 
+			if text == 'true':
+				tac.append(True, None, temp, '=')
+			else :
+				tac.append(True, None, temp, '=')
+			#TODO: ISME TRUE_LIST AUR FALSE_LIST WALA KAAM KRO. In general, boolean literals/variables/expressions jaha bhi hain waha check krlo.
+			return {'type': 'boolean','name': 'temp', 'true_list': [], 'false_list': []}
+		self.__errorHandler__("Only integer, float and boolean literals are supported.")
+	
+	# Visit a parse tree produced by java8Parser#primary.
+	def visitPrimaryNoNewArray__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primaryContext):
+		'''
+		primaryNoNewArray__2__primary:	literal
+    	|	THIS
+    	|	'(' expression ')'
+    	|	classInstanceCreationExpression__2__primary
+    	|	fieldAccess__2__primary
+    	|	arrayAccess__2__primary
+    	|	methodInvocation__2__primary
+    	;
+		'''
+		children = self.__getChildren__(ctx)
+		if len(children) == 3:
+			return self.visitExpression(children[1])
+		else:
+			return self.visitChildren(ctx)
 
 	def __handleMethods__(self,ctx):
 		'''
@@ -1054,12 +1110,10 @@ class myParseTreeVisitor(java8Visitor):
 		for i in range(0,tac.labels):
 			label = "L" + str(i)
 			idx_to_label[tac.label_to_idx[label]] = label
-		# print(idx_to_label)
 		for i in range(0,len(tac.code)):
 			str_out = "" + str(i)+"\t\t"
 			if(idx_to_label.get(i) is not None):
 				str_out += idx_to_label[i]
 			str_out += "\t\t"
-			# print(tac.code[i])
 			str_out += "\t\t".join([str(cell) for cell in tac.code[i]])
 			print(str_out)
