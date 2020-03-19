@@ -321,10 +321,6 @@ class myParseTreeVisitor(java8Visitor):
 	def visitIfThenStatement(self, ctx:java8Parser.IfThenStatementContext):
 		'''
 		ifThenStatement : IF '(' expression ')' statement
-		;
-		ifThenElseStatement : IF '(' expression ')' statementNoShortIf ELSE statement
-				;
-		ifThenElseStatementNoShortIf : IF '(' expression ')' statementNoShortIf ELSE statementNoShortIf
 				;
 		'''
 		symTable.invokeScope(ctx)
@@ -341,7 +337,12 @@ class myParseTreeVisitor(java8Visitor):
 		tac.backpatch([jump_idx],jump_label)
 		symTable.closeCurrScope()
 		return stmtInfo
+
 	def visitIfThenElseStatement(self, ctx:java8Parser.IfThenElseStatementContext):
+		'''
+		ifThenElseStatement : IF '(' expression ')' statementNoShortIf ELSE statement
+				;
+		'''
 		symTable.invokeScope(ctx)
 		p = self.__getChildren__(ctx)
 		exprInfo = self.visitExpression(p[2])
@@ -358,7 +359,12 @@ class myParseTreeVisitor(java8Visitor):
 		symTable.closeCurrScope()
 		return {'break_list':stmtInfo1['break_list']+stmtInfo1['break_list'],
 				'continue_list':stmtInfo2['continue_list' + stmtInfo2['continue_list']]}
+				
 	def visitIfThenElseStatementNoShortIf(self, ctx:java8Parser.IfThenElseStatementNoShortIfContext):
+		'''
+		ifThenElseStatementNoShortIf : IF '(' expression ')' statementNoShortIf ELSE statementNoShortIf
+				;
+		'''
 		symTable.invokeScope(ctx)
 		p = self.__getChildren__(ctx)
 		exprInfo = self.visitExpression(p[2])
