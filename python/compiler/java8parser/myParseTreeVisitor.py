@@ -946,9 +946,13 @@ class myParseTreeVisitor(java8Visitor):
 			if text == 'true':
 				tac.append(True, None, temp, '=')
 			else :
-				tac.append(True, None, temp, '=')
+				tac.append(False, None, temp, '=')
 			#TODO: ISME TRUE_LIST AUR FALSE_LIST WALA KAAM KRO. In general, boolean literals/variables/expressions jaha bhi hain waha check krlo.
 			return {'type': 'boolean','name': 'temp', 'true_list': [], 'false_list': []}
+		elif childType == java8Lexer.StringLiteral:
+			str_idx = symTable.addStringConstant(text)
+			tac.append(':str'+str(str_idx)+':', None, temp, '=')
+			return {'name': temp, 'type': 'String'}
 		self.__errorHandler__("Only integer, float and boolean literals are supported.")
 	
 	# Visit a parse tree produced by java8Parser#primary.
@@ -990,12 +994,13 @@ class myParseTreeVisitor(java8Visitor):
 					argProvided = self.__visitChildren__(child)
 			if(len(methodInfo['parameters']) != len(argProvided)):
 				self.__errorHandler__("Number of arguments mismatch")
-			expParams = methodInfo['parameters']
+			expParams = list(methodInfo['parameters'].keys())
+			# print(methodInfo,expParams,argProvided)
 			for i in range(0,len(argProvided)):
-				if(methodInfo['parameters'][i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
+				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
 					self.__errorHandler__("Type of arguments mismatch")
 				else:
-					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
+					tac.append(argProvided[i]['name'],'',':param'+str(i)+':','=')
 			tac.append('','',symbol,'function')
 
 		elif(isinstance(children[0],self.parser.NameContext)):
@@ -1017,9 +1022,10 @@ class myParseTreeVisitor(java8Visitor):
 					argProvided = self.__visitChildren__(child)
 			if(len(methodInfo['parameters']) != len(argProvided)):
 				self.__errorHandler__("Number of arguments mismatch")
-			expParams = methodInfo['parameters'].keys()
+			expParams = list(methodInfo['parameters'].keys())
+			# print(methodInfo)
 			for i in range(0,len(argProvided)):
-				if(methodInfo['parameters'][i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
+				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
 					self.__errorHandler__("Type of arguments mismatch")
 				else:
 					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
@@ -1052,8 +1058,7 @@ class myParseTreeVisitor(java8Visitor):
 			rhs = children[2].accept(self)
 			if(rhs['type'] != 'boolean'):
 				self.__errorHandler__(op + " defined only for boolean")
-			temp = symTable.getTemporary()
-			tac.append(temp,'',lhs['name'],rhs['name'],op)
+			tac.append(rhs['name'],'',lhs['name'],op)
 			return {'name': lhs['name'], 'type':'boolean','true_list': 
 					true_idx + lhs['true_list'] + rhs['true_list'],
 					'false_list': false_idx + lhs['false_list']+rhs['false_list']}

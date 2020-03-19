@@ -22,6 +22,7 @@ class SymbolTable:
         self.tempCount = 0
         self.scope_lookup = {}
         self.node_to_table = {}
+        self.string_constants = []
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
@@ -101,7 +102,10 @@ class SymbolTable:
 
     def getTemporary(self):
         self.tempCount += 1
-        return "__temp_" + str(self.tempCount)
+        return ":t" + str(self.tempCount)+":"
     
+    def addStringConstant(self,string):
+        self.string_constants.append(string)
+        return len(self.string_constants) - 1
     def errorHandler(self,symbol):
         print(str(symbol)+" not found in SymbolTable")

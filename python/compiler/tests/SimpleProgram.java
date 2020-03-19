@@ -1,6 +1,6 @@
 public class SimpleProgram {
 
-    public static void funct1 () {
+    public static void funct1 (String s) {
 	    // System.out.println ("Inside funct1");
     }
 
@@ -12,7 +12,7 @@ public class SimpleProgram {
 		p = p*3.0 + 1.0;
 		boolean x = a>b; //ISKA x = __temp_x  nhi aa rha in tac. Fix this before removing this test case.
 		a = (a<<1) * (b+2*(a));
-
+		funct1("Hello World!");
 
 		// a/=c;
 		// c=a+b*c-d;
