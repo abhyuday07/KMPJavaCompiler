@@ -3,7 +3,9 @@ public class SimpleProgram {
     public static void funct1 (String s) {
 	    // System.out.println ("Inside funct1");
     }
-
+    public static int func2(int i){
+    	return i;
+    }
     public static void main (String args[]) {
 		int a=1,b=2;
 		// int c=3,d=4;
@@ -13,7 +15,8 @@ public class SimpleProgram {
 		boolean x = a>b; //ISKA x = __temp_x  nhi aa rha in tac. Fix this before removing this test case.
 		a = (a<<1) * (b+2*(a));
 		funct1("Hello World!");
-		a = -"Hello World";
+		int y = func2(a);
+		return;
 		// a/=c;
 		// c=a+b*c-d;
 		// c = a*b/c + d^c + a>>b;

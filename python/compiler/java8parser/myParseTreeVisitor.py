@@ -535,6 +535,9 @@ class myParseTreeVisitor(java8Visitor):
 					# Both C-type and Java type dimensions supported
 					varInfo['dims'] = var['dims']
 					symTable.addSymbol('variables',varIdentifier,varInfo)
+					if 'value' in var:
+						self.__typecheck__(var['value']['type'],localVariableInfo['type'])
+						tac.append(varIdentifier,'',var['value']['name'],'=')
 		return
 	
 	def visitVariableInitializerList(self, ctx:java8Parser.VariableInitializerListContext):
@@ -1035,7 +1038,8 @@ class myParseTreeVisitor(java8Visitor):
 			return self.visitExpression(children[1])
 		else:
 			return self.visitChildren(ctx)
-
+	def visitMethodInvocation__2__primary(self,ctx:java8Parser.MethodInvocation__2__primaryContext):
+		return self.__handleMethods__(ctx)
 	def __handleMethods__(self,ctx):
 		'''
 		methodInvocation:	methodName '(' argumentList? ')'
