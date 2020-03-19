@@ -6,11 +6,13 @@ if __name__ is not None and "." in __name__:
 	from .java8Visitor import java8Visitor
 	from .ThreeAddressCode import *
 	from .firstPassTreeVisitor import firstPassTreeVisitor
+	from .exceptionHandler import exceptionHandler
 else:
 	from java8Lexer import java8Lexer
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
 	from firstPassTreeVisitor import firstPassTreeVisitor
+	from exceptionHandler import exceptionHandler
 import json
 from graphviz import Digraph
 global tac
@@ -34,6 +36,7 @@ class myParseTreeVisitor(java8Visitor):
 		super().__init__()
 		self.parser = parser
 		self.lexer = lexer
+		self.exceptionHandler = exceptionHandler()
 		fpTreeVisitor = firstPassTreeVisitor(parser,lexer,symTable)
 		fpTreeVisitor.visit(tree)
 	
@@ -76,8 +79,9 @@ class myParseTreeVisitor(java8Visitor):
 		#TODO: Fill this.
 		return type1
 	
-	def __errorHandler__(self, str):
-		raise Exception(str)
+	def __errorHandler__(self, ctx,err,e=0):
+		self.exceptionHandler.raiseException(ctx,err,e)
+		return
 
 	def __handleWhile__(self,ctx):
 		'''
@@ -245,33 +249,6 @@ class myParseTreeVisitor(java8Visitor):
 			if ret is not None:
 				return ret
 		return stmtInfo
-	def visitReturnStatement(self,ctx:java8Parser.ReturnStatementContext):
-		'''
-		returnStatement : RETURN expression? ';'
-		;
-		'''
-		children = self.__getChildren__(ctx)
-		if(len(children) == 3):
-			exprInfo = self.visitExpression(children[1])
-			next_idx = []
-			next_idx.append(tac.append('','','','goto'))
-			if('true_list' in exprInfo and len(exprInfo['true_list']) > 0):
-				true_label = tac.genLabel()
-				tac.backpatch(exprInfo['true_list'],true_label)
-				tac.append('True','',exprInfo['name'],'=')
-				next_idx.append(tac.append('','','','goto'))
-			if('false_list' in exprInfo and len(exprInfo['false_list']) > 0):
-				false_label = tac.genLabel()
-				tac.backpatch(exprInfo['false_list'],false_label)
-				tac.append('False','',exprInfo['name'],'=')
-				next_idx.append(tac.append('','','','goto'))
-			next_label = tac.genLabel()
-			tac.backpatch(next_idx,next_label)
-			tac.append(exprInfo['name'],'',':r:','=')
-			tac.append('','','','ret')
-		else:
-			tac.append('','','','ret')
-		return
 	def visitBreakStatement(self,ctx:java8Parser.BreakStatementContext):
 		return tac.append('','','','goto')
 	def visitContinueStatement(self,ctx:java8Parser.ContinueStatementContext):
@@ -713,7 +690,7 @@ class myParseTreeVisitor(java8Visitor):
 			if children[0].getText() == '-':	#Rule 4
 				c = self.visitUnaryExpression(children[1])
 				if c['type'] not in ['float', 'double', 'long', 'int']:
-					self.__errorHandler__("- defined only for int, long, float and double")
+					self.__errorHandler__(ctx,"- defined only for int, long, float and double")
 				temp = symTable.getTemporary()
 				tac.append(c['name'], None, temp, 'neg')
 				return {'name':temp, 'type':c['type'],'true_list': [], 'false_list':[]}
@@ -730,7 +707,7 @@ class myParseTreeVisitor(java8Visitor):
 		children = self.__getChildren__(ctx)
 		c = self.visitUnaryExpression(children[1])
 		if c.get('type') not in ['long', 'float', 'int', 'double']:
-			self.__errorHandler__("++ defined only for int, long, float and double")
+			self.__errorHandler__(ctx,"++ defined only for int, long, float and double")
 		tac.append(c['name'],1,c['name'],'+')
 		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
 
@@ -742,7 +719,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		children = self.__getChildren__(ctx)
 		if c.get('type') not in ['long', 'float', 'int', 'double']:
-			self.__errorHandler__("++ defined only for int, long, float and double")
+			self.__errorHandler__(ctx,"++ defined only for int, long, float and double")
 
 		c = self.visitUnaryExpression(children[1])
 		tac.append(c['name'],1,c['name'],'-')
@@ -809,11 +786,11 @@ class myParseTreeVisitor(java8Visitor):
 		temp = symTable.getTemporary()
 		if children[0].getText() == '~':
 			if c['type'] not in ['int', 'long']:
-				self.__errorHandler__("~ defined only for int, long")
+				self.__errorHandler__(ctx,"~ defined only for int, long")
 			tac.append(c['name'], None, temp, 'complement') #Bitwise complement of an integer ~
 		else:
 			if c['type'] != 'boolean':
-				self.__errorHandler__("~ defined only for boolean")
+				self.__errorHandler__(ctx,"~ defined only for boolean")
 			tac.append(c['name'], None, temp, 'invert') #Boolean invert !
 		return {'name': temp, 'type': c['type'],'true_list': [], 'false_list':[]}
 
@@ -836,34 +813,7 @@ class myParseTreeVisitor(java8Visitor):
 		p = self.__visitChildren__(ctx)
 		commonType = self.__typecheck__(p[0].get('type'), p[2]['type'])
 		if not commonType:
-			self.__errorHandler__("Types don't match")
-		# Handle short circuit
-		# No handle short circuit just append this snippet
-		'''
-						[expr_code]
-						goto next_label
-		true_label : 	temp = True
-						goto next_label
-		false_label :	temp = False
-						goto next_label # Redundant but let it be
-		next_label :	
-		'''
-		# SNIPPET START
-		next_idx = []
-		next_idx.append(tac.append('','','','goto'))
-		if('true_list' in p[2]  and len(p[2]['true_list']) > 0):
-			true_label = tac.genLabel()
-			tac.append('True','',p[2]['name'],'=')
-			tac.backpatch(p[2]['true_list'],true_label)
-			next_idx.append(tac.append('','','','goto'))
-		if('false_list' in p[2]  and len(p[2]['false_list']) > 0):
-			false_label = tac.genLabel()
-			tac.append('False','',p[2]['name'],'=')
-			tac.backpatch(p[2]['false_list'],false_label)
-			next_idx.append(tac.append('','','','goto'))
-		next_label = tac.genLabel()
-		tac.backpatch(next_idx,next_label)
-		# SNIPPET END
+			self.__errorHandler__(ctx,"Types don't match")
 		if(p[1]['operator'] == '='):
 			tac.append(p[2]['name'], None, p[0].get('name'), '=')
 			#TODO: How to handle leftHandSide array and field accesses. Now handled only 'name'.
@@ -1013,7 +963,7 @@ class myParseTreeVisitor(java8Visitor):
 			str_idx = symTable.addStringConstant(text)
 			tac.append(':str'+str(str_idx)+':', None, temp, '=')
 			return {'name': temp, 'type': 'String'}
-		self.__errorHandler__("Only integer, float and boolean literals are supported.")
+		self.__errorHandler__(ctx,"Only integer, float and boolean literals are supported.")
 	
 	# Visit a parse tree produced by java8Parser#primary.
 	def visitPrimaryNoNewArray__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primaryContext):
@@ -1053,12 +1003,12 @@ class myParseTreeVisitor(java8Visitor):
 				if(isinstance(child,self.parser.ArgumentListContext)):
 					argProvided = self.__visitChildren__(child)
 			if(len(methodInfo['parameters']) != len(argProvided)):
-				self.__errorHandler__("Number of arguments mismatch")
+				self.__errorHandler__(ctx,"Number of arguments mismatch")
 			expParams = list(methodInfo['parameters'].keys())
 			# print(methodInfo,expParams,argProvided)
 			for i in range(0,len(argProvided)):
 				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
-					self.__errorHandler__("Type of arguments mismatch")
+					self.__errorHandler__(ctx,"Type of arguments mismatch")
 				else:
 					tac.append(argProvided[i]['name'],'',':param'+str(i)+':','=')
 			tac.append('','',symbol,'function')
@@ -1081,12 +1031,12 @@ class myParseTreeVisitor(java8Visitor):
 				if(isinstance(child,self.parser.ArgumentListContext)):
 					argProvided = self.__visitChildren__(child)
 			if(len(methodInfo['parameters']) != len(argProvided)):
-				self.__errorHandler__("Number of arguments mismatch")
+				self.__errorHandler__(ctx,"Number of arguments mismatch")
 			expParams = list(methodInfo['parameters'].keys())
 			# print(methodInfo)
 			for i in range(0,len(argProvided)):
 				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
-					self.__errorHandler__("Type of arguments mismatch")
+					self.__errorHandler__(ctx,"Type of arguments mismatch")
 				else:
 					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
 			tac.append('','',symbol,'function')
@@ -1108,7 +1058,7 @@ class myParseTreeVisitor(java8Visitor):
 			true_idx = []
 			false_idx = []
 			if(lhs['type'] != 'boolean'):
-				self.__errorHandler__(op + " defined only for boolean")
+				self.__errorHandler__(ctx,op + " defined only for boolean")
 			if(op == '||'):
 				true_idx.append(tac.append('','','',lhs['name']))
 			else:
@@ -1117,7 +1067,7 @@ class myParseTreeVisitor(java8Visitor):
 				false_idx.append(tac.append('','','',lhs['name']))
 			rhs = children[2].accept(self)
 			if(rhs['type'] != 'boolean'):
-				self.__errorHandler__(op + " defined only for boolean")
+				self.__errorHandler__(ctx,op + " defined only for boolean")
 			tac.append(rhs['name'],'',lhs['name'],op)
 			return {'name': lhs['name'], 'type':'boolean','true_list': 
 					true_idx + lhs['true_list'] + rhs['true_list'],
@@ -1125,13 +1075,13 @@ class myParseTreeVisitor(java8Visitor):
 
 		elif op in ['^', '|', '&']: # Bitwise ops
 			if commonType not in ['int', 'boolean', 'long']:
-				self.__errorHandler__(op + " defined only for int, long and boolean")
+				self.__errorHandler__(ctx,op + " defined only for int, long and boolean")
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		elif op in ['<', '>', '<=', '>=','==','!=']: #Relational operators
 			if commonType not in ['int', 'long', 'double', 'float']:
-				self.__errorHandler__(op + " defined only for int, long and double and float")
+				self.__errorHandler__(ctx,op + " defined only for int, long and double and float")
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			# idx = tac.append('','','',temp)
@@ -1141,13 +1091,13 @@ class myParseTreeVisitor(java8Visitor):
 			pass
 		elif op in ['>>>', '<<', '>>']: # Shift operators
 			if commonType not in ['int', 'long']:
-				self.__errorHandler__(op + " defined only for int and long")
+				self.__errorHandler__(ctx,op + " defined only for int and long")
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		elif op in ['+', '-', '/', '*', '%']:
 			if commonType not in ['int', 'long' , 'double', 'float']:
-				self.__errorHandler__(op + " defined only for int, long, float and double")
+				self.__errorHandler__(ctx,op + " defined only for int, long, float and double")
 			#May need to send different operators for each type as assembly instructions are diff. Will look at this later.
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)

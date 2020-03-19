@@ -13,7 +13,7 @@ public class SimpleProgram {
 		boolean x = a>b; //ISKA x = __temp_x  nhi aa rha in tac. Fix this before removing this test case.
 		a = (a<<1) * (b+2*(a));
 		funct1("Hello World!");
-
+		a = -"Hello World";
 		// a/=c;
 		// c=a+b*c-d;
 		// c = a*b/c + d^c + a>>b;
