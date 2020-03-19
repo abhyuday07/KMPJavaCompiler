@@ -246,8 +246,6 @@ class myParseTreeVisitor(java8Visitor):
 			stmtInfo['continue_list'].append(idx)
 		else:
 			ret = child.accept(self)
-			if ret is not None:
-				return ret
 		return stmtInfo
 	def visitReturnStatement(self,ctx:java8Parser.ReturnStatementContext):
 		'''
@@ -1096,9 +1094,9 @@ class myParseTreeVisitor(java8Visitor):
 					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
 			tac.append('','',symbol,'function')
 		else:
-			# Not handled
-			self.__errorHandler__(ctx,"this type of method invocation is not supported")
-		return {'name':':r:','type':methodInfo['name'],'dims':methodInfo['dims']}
+			self.__errorHandler__(ctx,"Method Invocation not supported")
+		return {'name':':r:','type':methodInfo['type'],
+				'continue_list':[], 'break_list':[]}
 
 	def __handleBinaryExpressions__(self, ctx):
 		# Handles multiple binary expressions of form expr op expr.
