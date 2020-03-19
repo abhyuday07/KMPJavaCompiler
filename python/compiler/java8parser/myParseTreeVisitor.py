@@ -245,6 +245,33 @@ class myParseTreeVisitor(java8Visitor):
 			if ret is not None:
 				return ret
 		return stmtInfo
+	def visitReturnStatement(self,ctx:java8Parser.ReturnStatementContext):
+		'''
+		returnStatement : RETURN expression? ';'
+		;
+		'''
+		children = self.__getChildren__(ctx)
+		if(len(children) == 3):
+			exprInfo = self.visitExpression(children[1])
+			next_idx = []
+			next_idx.append(tac.append('','','','goto'))
+			if('true_list' in exprInfo and len(exprInfo['true_list']) > 0):
+				true_label = tac.genLabel()
+				tac.backpatch(exprInfo['true_list'],true_label)
+				tac.append('True','',exprInfo['name'],'=')
+				next_idx.append(tac.append('','','','goto'))
+			if('false_list' in exprInfo and len(exprInfo['false_list']) > 0):
+				false_label = tac.genLabel()
+				tac.backpatch(exprInfo['false_list'],false_label)
+				tac.append('False','',exprInfo['name'],'=')
+				next_idx.append(tac.append('','','','goto'))
+			next_label = tac.genLabel()
+			tac.backpatch(next_idx,next_label)
+			tac.append(exprInfo['name'],'',':r:','=')
+			tac.append('','','','ret')
+		else:
+			tac.append('','','','ret')
+		return
 	def visitBreakStatement(self,ctx:java8Parser.BreakStatementContext):
 		return tac.append('','','','goto')
 	def visitContinueStatement(self,ctx:java8Parser.ContinueStatementContext):
@@ -810,6 +837,33 @@ class myParseTreeVisitor(java8Visitor):
 		commonType = self.__typecheck__(p[0].get('type'), p[2]['type'])
 		if not commonType:
 			self.__errorHandler__("Types don't match")
+		# Handle short circuit
+		# No handle short circuit just append this snippet
+		'''
+						[expr_code]
+						goto next_label
+		true_label : 	temp = True
+						goto next_label
+		false_label :	temp = False
+						goto next_label # Redundant but let it be
+		next_label :	
+		'''
+		# SNIPPET START
+		next_idx = []
+		next_idx.append(tac.append('','','','goto'))
+		if('true_list' in p[2]  and len(p[2]['true_list']) > 0):
+			true_label = tac.genLabel()
+			tac.append('True','',p[2]['name'],'=')
+			tac.backpatch(p[2]['true_list'],true_label)
+			next_idx.append(tac.append('','','','goto'))
+		if('false_list' in p[2]  and len(p[2]['false_list']) > 0):
+			false_label = tac.genLabel()
+			tac.append('False','',p[2]['name'],'=')
+			tac.backpatch(p[2]['false_list'],false_label)
+			next_idx.append(tac.append('','','','goto'))
+		next_label = tac.genLabel()
+		tac.backpatch(next_idx,next_label)
+		# SNIPPET END
 		if(p[1]['operator'] == '='):
 			tac.append(p[2]['name'], None, p[0].get('name'), '=')
 			#TODO: How to handle leftHandSide array and field accesses. Now handled only 'name'.
