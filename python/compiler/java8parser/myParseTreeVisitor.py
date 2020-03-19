@@ -1095,7 +1095,10 @@ class myParseTreeVisitor(java8Visitor):
 				else:
 					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
 			tac.append('','',symbol,'function')
-		return
+		else:
+			# Not handled
+			self.__errorHandler__(ctx,"this type of method invocation is not supported")
+		return {'name':':r:','type':methodInfo['name'],'dims':methodInfo['dims']}
 
 	def __handleBinaryExpressions__(self, ctx):
 		# Handles multiple binary expressions of form expr op expr.
