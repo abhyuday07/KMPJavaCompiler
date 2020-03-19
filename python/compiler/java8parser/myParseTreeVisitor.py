@@ -1052,7 +1052,8 @@ class myParseTreeVisitor(java8Visitor):
 			rhs = children[2].accept(self)
 			if(rhs['type'] != 'boolean'):
 				self.__errorHandler__(op + " defined only for boolean")
-			tac.append(rhs['name'],'',lhs['name'],'')
+			temp = symTable.getTemporary()
+			tac.append(temp,'',lhs['name'],rhs['name'],op)
 			return {'name': lhs['name'], 'type':'boolean','true_list': 
 					true_idx + lhs['true_list'] + rhs['true_list'],
 					'false_list': false_idx + lhs['false_list']+rhs['false_list']}
