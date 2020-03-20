@@ -42,8 +42,7 @@ class myParseTreeVisitor(java8Visitor):
 		fpTreeVisitor.visit(tree)
 	
 	def __isIdentifier__(self,ctx):
-		parser.Tree
-		if(isinstance(ctx, antlr4.tree.Tree.TerminalNode) and ctx.getSymbol().type == java8Lexer.Identifier):
+		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == java8Lexer.Identifier):
 			return True
 		else:
 			return False
