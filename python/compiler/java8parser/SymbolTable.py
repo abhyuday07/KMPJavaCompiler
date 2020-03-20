@@ -29,7 +29,7 @@ class SymbolTable:
         if (symbol_name in self.scopes[self.curr_scope][symbol_type]):
             return -1
             # symbol already exists in the current scope
-    #symbol doesn't exist in the current scope hence add it
+            # symbol doesn't exist in the current scope hence add it
         self.scopes[self.curr_scope][symbol_type][symbol_name] = symbol_details
       
     def getScopeOfSymbol(self, symbol_type, symbol_name):

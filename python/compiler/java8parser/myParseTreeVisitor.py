@@ -4,13 +4,14 @@ if __name__ is not None and "." in __name__:
 	from .java8Lexer import java8Lexer
 	from .java8Parser import java8Parser
 	from .java8Visitor import java8Visitor
-	from .ThreeAddressCode import *
+	from .ThreeAddressCode import ThreeAddressCode, symTable
 	from .firstPassTreeVisitor import firstPassTreeVisitor
 	from .exceptionHandler import exceptionHandler
 else:
 	from java8Lexer import java8Lexer
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
+	from ThreeAddressCode import ThreeAddressCode, symTable
 	from firstPassTreeVisitor import firstPassTreeVisitor
 	from exceptionHandler import exceptionHandler
 import json
@@ -41,8 +42,8 @@ class myParseTreeVisitor(java8Visitor):
 		fpTreeVisitor.visit(tree)
 	
 	def __isIdentifier__(self,ctx):
-		
-		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == java8Lexer.Identifier):
+		parser.Tree
+		if(isinstance(ctx, antlr4.tree.Tree.TerminalNode) and ctx.getSymbol().type == java8Lexer.Identifier):
 			return True
 		else:
 			return False
@@ -747,10 +748,9 @@ class myParseTreeVisitor(java8Visitor):
 		;
 		'''
 		children = self.__getChildren__(ctx)
+		c = self.visitUnaryExpression(children[1])
 		if c.get('type') not in ['long', 'float', 'int', 'double']:
 			self.__errorHandler__(ctx,"++ defined only for int, long, float and double")
-
-		c = self.visitUnaryExpression(children[1])
 		tac.append(c['name'],1,c['name'],'-')
 		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
 
@@ -1038,8 +1038,7 @@ class myParseTreeVisitor(java8Visitor):
 			return self.visitExpression(children[1])
 		else:
 			return self.visitChildren(ctx)
-	def visitMethodInvocation__2__primary(self,ctx:java8Parser.MethodInvocation__2__primaryContext):
-		return self.__handleMethods__(ctx)
+	
 	def __handleMethods__(self,ctx):
 		'''
 		methodInvocation:	methodName '(' argumentList? ')'
