@@ -76,11 +76,28 @@ class myParseTreeVisitor(java8Visitor):
 		return result
 
 	def __typecheck__(self,type1, type2):
-		#TODO: Fill this.
-		return type1
-	
+		'''
+		Returns the common type of 2 sent types. Does NOT raise errors.
+		TODO: https://www.geeksforgeeks.org/type-conversion-java-examples/
+		'''
+		if type1 == type2:
+			return type1
+		else:
+			return None
+	def __sizeof__(self, type):
+		if type == 'boolean':
+			return 1 #This is JVM dependent
+		elif type == 'int' or type == 'float':
+			return 4
+		elif type == 'long' or type == 'double' or type == 'pointer':
+			return 8
+		else:
+			return None
+		
+
 	def __errorHandler__(self, ctx,err,e=0):
 		self.exceptionHandler.raiseException(ctx,err,e)
+		raise Exception(err)
 		return
 
 	def __handleWhile__(self,ctx):
@@ -1020,23 +1037,66 @@ class myParseTreeVisitor(java8Visitor):
 			return {'name': temp, 'type': 'String'}
 		self.__errorHandler__(ctx,"Only integer, float and boolean literals are supported.")
 	
-	# Visit a parse tree produced by java8Parser#primary.
+
 	def visitPrimaryNoNewArray__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primaryContext):
+		return self.__handle1or3Children__(ctx)
+	
+	def visitPrimaryNoNewArray__2__arrayAccess(self, ctx:java8Parser.PrimaryNoNewArray__2__arrayAccessContext):
+		return self.__handle1or3Children__(ctx)
+	
+	def visitPrimaryNoNewArray__2__primary__2__arrayAccess__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primary__2__arrayAccess__2__primaryContext):
+		return self.__handle1or3Children__(ctx)
+
+
+	# Visit a parse tree produced by java8Parser#arrayAccess__2__primary.
+	# Note about arrays: Array expressions in general are of 2 types, ones ending with __arrayAccess and others ending with __primary.
+	# *__primary non terminals are used to read from arrays, whereas *__arrayAccess NTs are used in assignment.
+	# We will handle __primary by copying the memory location into a new temporary and returning the name and type. of the temporary. Type may be a pointer in itself (format below).
+	# __arrayAccess will be handled by returning a pointer to the final location to be pointed. We will then modify the 'leftHandSide' NT to assign the value at the location.
+	def visitArrayAccess__2__primary(self, ctx:java8Parser.ArrayAccess__2__primaryContext):
 		'''
-		primaryNoNewArray__2__primary:	literal
-    	|	THIS
-    	|	'(' expression ')'
-    	|	classInstanceCreationExpression__2__primary
-    	|	fieldAccess__2__primary
-    	|	arrayAccess__2__primary
-    	|	methodInvocation__2__primary
-    	;
+		arrayAccess__2__primary: (	name '[' expression ']'
+		|	primaryNoNewArray__2__primary__2__arrayAccess__2__primary '[' expression ']'
+		)
+		(	primaryNoNewArray__2__primary__1__arrayAccess__2__primary '[' expression ']'
+		)*
+	    ;
 		'''
-		children = self.__getChildren__(ctx)
-		if len(children) == 3:
-			return self.visitExpression(children[1])
+		p = self.__visitChildren__(ctx)
+		n_dims = len(p)//4
+		# The first child will return a 'name' storing the 'address' of the first level array.
+		# It will also return a 'type' = 'pointer' and 'pointer_info' = {'type': 'int', 'dims': '3'} (for 3D int array)
+		# Note: While declaring arrays we will have to assign values up till n-1 dimensions of the array.
+		# Confirm all expressions are ints.
+		return
+		if p[0]['type'] != 'pointer' or p[0]['pointer_info']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
+			self.__errorHandler__(ctx, ctx.getChild(0).getText() + " must be an array/pointer.")
+		for i in range(n_dims):
+			if p[4*i+2]['type'] != 'int':
+				self.__errorHandler__(ctx, "Array indices must be integers")
+
+		#For each dimension generate tac to read from that level and keep on 'dereferencing' from the locations. (i-th level pointer)
+		base = p[0]['name']
+		for i in range(n_dims):
+			idx_name = p[4*i+2]['name']
+			offset = symTable.getTemporary()
+			if i < n_dims - 1:
+				unitSize = __sizeof__('pointer')
+			else:
+				unitSize = __sizeof__(p[0]['pointer_info']['type'])
+			assert(unitSize)
+			tac.append(unitSize, idx_name, offset, '*')
+			addr = symTable.getTemporary()
+			tac.append(base, offset, addr, '+')
+			value = symTable.getTemporary()
+			tac.append(addr, None, value, 'deref') #dereference the value at addr and assign to variable 'value'.
+			base = value			
+		
+		if n_dims < p[0]['pointer_info']['dims']:
+			return {'name': base, 'type': 'pointer', 'pointer_info': p[0]['pointer_info']['dims'] - n_dims}
 		else:
-			return self.visitChildren(ctx)
+			return {'name': base, 'type': p[0]['pointer_info']['type']}
+
 	
 	def __handleMethods__(self,ctx):
 		'''
@@ -1060,7 +1120,6 @@ class myParseTreeVisitor(java8Visitor):
 			if(len(methodInfo['parameters']) != len(argProvided)):
 				self.__errorHandler__(ctx,"Number of arguments mismatch")
 			expParams = list(methodInfo['parameters'].keys())
-			# print(methodInfo,expParams,argProvided)
 			for i in range(0,len(argProvided)):
 				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
 					self.__errorHandler__(ctx,"Type of arguments mismatch")
@@ -1088,7 +1147,6 @@ class myParseTreeVisitor(java8Visitor):
 			if(len(methodInfo['parameters']) != len(argProvided)):
 				self.__errorHandler__(ctx,"Number of arguments mismatch")
 			expParams = list(methodInfo['parameters'].keys())
-			# print(methodInfo)
 			for i in range(0,len(argProvided)):
 				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
 					self.__errorHandler__(ctx,"Type of arguments mismatch")
@@ -1161,6 +1219,14 @@ class myParseTreeVisitor(java8Visitor):
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		assert(False)
+
+	def __handle1or3Children__(self, ctx):
+		# Function to handle non-terminals where only 1 production goes to '(' expression ')' and other productions have single child.
+		children = self.__getChildren__(ctx)
+		if len(children) == 3:
+			return self.visitExpression(children[1])
+		else:
+			return self.visitChildren(ctx)
 				
 
 	def visitMethodInvocation(self, ctx: java8Parser.MethodInvocationContext):
