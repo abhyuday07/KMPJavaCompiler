@@ -78,7 +78,7 @@ class myParseTreeVisitor(java8Visitor):
 	def __typecheck__(self,type1, type2):
 		'''
 		Returns the common type of 2 sent types. Does NOT raise errors.
-		TODO: https://www.geeksforgeeks.org/type-conversion-java-examples/
+		TODO: https://www.geeksforgeeks.org/type-conversion-java-examples/.Will do this later.
 		'''
 		if type1 == type2:
 			return type1
@@ -845,10 +845,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 
 		p = self.__visitChildren__(ctx)
-		commonType = self.__typecheck__(p[0].get('type'), p[2]['type'])
-		if not commonType:
-			self.__errorHandler__(ctx,"Types don't match")
-		# Handle short circuit
+		# Handle short circuit. TODO: What is this?
 		# No handle short circuit just append this snippet
 		'''
 						[expr_code]
@@ -875,12 +872,26 @@ class myParseTreeVisitor(java8Visitor):
 		next_label = tac.genLabel()
 		tac.backpatch(next_idx,next_label)
 		# SNIPPET END
-		if(p[1]['operator'] == '='):
-			tac.append(p[2]['name'], None, p[0].get('name'), '=')
-			#TODO: How to handle leftHandSide array and field accesses. Now handled only 'name'.
-		else:
-			tac.append( p[0].get('name'), p[2]['name'],p[0].get('name'), p[1]['operator'][:-1])
-		return {'type': commonType, 'name':p[0].get('name'), 'true_list': [], 'false_list' : []}
+		#TODO: How to handle field accesses. Now handled only 'name' and 'arrayAccess'.
+		if isinstance(ctx.getChild(0).getChild(0), self.parser.ArrayAccessContext):
+			commonType = self.__typecheck__({'base': p[0]['type']['base'], dims: p[0]['type']['dims']-1}, p[2]['type'])
+			if not commonType:
+				self.__errorHandler__(ctx,"Types don't match")
+			temp = symTable.getTemporary() #to store the new value
+			if(p[1]['operator'] == '='):
+				tac.append(p[2]['name'], None,temp, '=')
+			else:
+				oldValue = symTable.getTemporary()
+				tac.append(p[0]['name'], None, oldValue, 'load')
+				tac.append( oldValue, p[2]['name'],temp, p[1]['operator'][:-1])
+			tac.append(temp, None, p[0]['name'], 'store') # p[0]['name'] stores the address and temp stores the value to be stored.
+			return {'type': commonType, 'name': temp, 'true_list': [], 'false_list': []}
+		elif isinstance(ctx.getChild(0).getChild(0), self.parser.NameContext):
+			if(p[1]['operator'] == '='):
+				tac.append(p[2]['name'], None, p[0].get('name'), '=')
+			else:
+				tac.append( p[0].get('name'), p[2]['name'],p[0].get('name'), p[1]['operator'][:-1])
+			return {'type': commonType, 'name':p[0].get('name'), 'true_list': [], 'false_list' : []}
 	
 			
 
@@ -1036,54 +1047,26 @@ class myParseTreeVisitor(java8Visitor):
 	def visitPrimaryNoNewArray__2__primary__2__arrayAccess__2__primary(self, ctx:java8Parser.PrimaryNoNewArray__2__primary__2__arrayAccess__2__primaryContext):
 		return self.__handle1or3Children__(ctx)
 
-
-	# Visit a parse tree produced by java8Parser#arrayAccess__2__primary.
-	# Note about arrays: Array expressions in general are of 2 types, ones ending with __arrayAccess and others ending with __primary.
-	# *__primary non terminals are used to read from arrays, whereas *__arrayAccess NTs are used in assignment.
-	# We will handle __primary by copying the memory location into a new temporary and returning the name and type. of the temporary. Type may be a pointer in itself (format below).
-	# __arrayAccess will be handled by returning a pointer to the final location to be pointed. We will then modify the 'leftHandSide' NT to assign the value at the location.
+	# Primary array accesses.
 	def visitArrayAccess__2__primary(self, ctx:java8Parser.ArrayAccess__2__primaryContext):
+		return self.__handleArrayAccessPrimary__(ctx)
+	def visitArrayAccess__1__primary(self, ctx:java8Parser.ArrayAccess__1__primaryContext):
+		return self.__handleArrayAccessPrimary__(ctx)
+
+	# Assignment array accesses
+	# Visit a parse tree produced by java8Parser#arrayAccess.
+	def visitArrayAccess(self, ctx:java8Parser.ArrayAccessContext):
 		'''
-		arrayAccess__2__primary: (	name '[' expression ']'
-		|	primaryNoNewArray__2__primary__2__arrayAccess__2__primary '[' expression ']'
+		arrayAccess:	(	name '[' expression ']'
+		|	primaryNoNewArray__2__arrayAccess '[' expression ']'
 		)
-		(	primaryNoNewArray__2__primary__1__arrayAccess__2__primary '[' expression ']'
+		(	primaryNoNewArray__1__arrayAccess '[' expression ']'
 		)*
 	    ;
 		'''
-		p = self.__visitChildren__(ctx)
-		n_dims = len(p)//4
-		# The first child will return a 'name' storing the 'address' of the first level array.
-		# It will also return a 'type' = 'pointer' and 'pointer_info' = {'type': 'int', 'dims': '3'} (for 3D int array)
-		# Note: While declaring arrays we will have to assign values up till n-1 dimensions of the array.
-		# Confirm all expressions are ints.
-		return
-		if p[0]['type']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
-			self.__errorHandler__(ctx, ctx.getChild(0).getText() + " must be an array/pointer.")
-		for i in range(n_dims):
-			if p[4*i+2]['type']['base'] != 'int' or p[4*i+2]['type']['dims'] != 0:
-				self.__errorHandler__(ctx, "Array indices must be integers")
+		# Similar to array access primary. Just returns the last level pointer instead of assigning it to a temporary.
+		return self.__arrayAccessLastPointer__(self, ctx)
 
-		#For each dimension generate tac to read from that level and keep on 'dereferencing' from the locations. (i-th level pointer)
-		base = p[0]['name']
-		for i in range(n_dims):
-			idx_name = p[4*i+2]['name']
-			offset = symTable.getTemporary()
-			if i < n_dims - 1:
-				unitSize = __sizeof__('pointer')
-			else:
-				unitSize = __sizeof__(p[0]['type']['base'])
-			assert(unitSize)
-			tac.append(unitSize, idx_name, offset, '*')
-			addr = symTable.getTemporary()
-			tac.append(base, offset, addr, '+')
-			value = symTable.getTemporary()
-			tac.append(addr, None, value, 'deref') #dereference the value at addr and assign to variable 'value'.
-			base = value			
-		
-		return {'name': base, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims}}
-
-	
 	def __handleMethods__(self,ctx):
 		'''
 		methodInvocation:	methodName '(' argumentList? ')'
@@ -1215,7 +1198,56 @@ class myParseTreeVisitor(java8Visitor):
 			return self.visitExpression(children[1])
 		else:
 			return self.visitChildren(ctx)
-				
+
+	# Note about arrays: Array expressions in general are of 2 types, ones ending with __arrayAccess and others ending with __primary.
+	# *__primary non terminals are used to read from arrays, whereas *__arrayAccess NTs are used in assignment.
+	# We will handle __primary by copying the memory location into a new temporary and returning the name and type. of the temporary. Type may be a pointer in itself (format below).
+	# __arrayAccess will be handled by returning a pointer to the final location to be pointed. We will then modify the 'leftHandSide' NT to assign the value at the location.
+	def __handleArrayAccessPrimary__(self, ctx):
+		lastPointer = self.__arrayAccessLastPointer__(ctx)
+		temp = symTable.getTemporary()
+		tac.append(lastPointer['name'], None, temp, 'load')
+		return {'name': temp, 'type': {'base' : lastPointer['type']['base'] , 'dims': lastPointer['type']['dims']-1}}
+
+	def __arrayAccessLastPointer__(self, ctx):
+		# returns the pointer to the array element being accessed.
+		#assignment accesses can directly use this pointer to store value.
+		#Primary accesses can use this to extract value to a temporary.
+		'''
+		arrayAccess__2__primary: (	name '[' expression ']'
+		|	primaryNoNewArray__2__primary__2__arrayAccess__2__primary '[' expression ']'
+		)
+		(	primaryNoNewArray__2__primary__1__arrayAccess__2__primary '[' expression ']'
+		)*
+	    ;
+		'''
+		p = self.__visitChildren__(ctx)
+		n_dims = len(p)//4
+		# The first child will return a 'name' storing the 'address' of the first level array.
+		# Note: While declaring arrays we will have to assign values up till n-1 dimensions of the array.
+		# Confirm all expressions are ints.
+		return
+		if p[0]['type']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
+			self.__errorHandler__(ctx, ctx.getChild(0).getText() + " must be an array/pointer.")
+		for i in range(n_dims):
+			if p[4*i+2]['type']['base'] != 'int' or p[4*i+2]['type']['dims'] != 0:
+				self.__errorHandler__(ctx, "Array indices must be integers")
+
+		#For each dimension generate tac to read from that level and keep on 'dereferencing' from the locations. (i-th level pointer)
+		base = p[0]['name']
+		for i in range(n_dims):
+			idx_name = p[4*i+2]['name']
+			offset = symTable.getTemporary()
+			unitSize = __sizeof__('pointer')
+			assert(unitSize)
+			tac.append(unitSize, idx_name, offset, '*')
+			addr = symTable.getTemporary()
+			tac.append(base, offset, addr, '+')
+			if i < n_dims-1:
+				value = symTable.getTemporary()
+				tac.append(addr, None, value, 'load') #load the value at addr and assign to variable 'value'.
+			base = value			
+		return {'name': addr, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims+1}}
 
 	def visitMethodInvocation(self, ctx: java8Parser.MethodInvocationContext):
 		return self.__handleMethods__(ctx)
