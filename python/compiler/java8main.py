@@ -138,13 +138,13 @@ def main():
 	tree = parser.compilationUnit()
 	# mytree = deepCopy(tree, None)
 	#compressTree(mytree)
-	try:
-		visitor = myParseTreeVisitor(parser,lexer,tree)
-		visitor.visit(tree)
-		visitor.printSymbolTable()
-		visitor.printTAC()
-	except Exception as e:
-		print(e)
+	# try: #Removed this part while development as stack trace helped in debugging.
+	visitor = myParseTreeVisitor(parser,lexer,tree)
+	visitor.visit(tree)
+	visitor.printSymbolTable()
+	visitor.printTAC()
+	# except Exception as e:
+		# print(e)
 	# AST_root = createAST(tree, None)
 	# dot = Digraph(comment="Abstract Syntax Tree")
 	# createGraph(AST_root, dot)

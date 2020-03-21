@@ -84,7 +84,7 @@ class myParseTreeVisitor(java8Visitor):
 			return type1
 		else:
 			return None
-	def __sizeof__(self, type):
+	def __sizeof__(self, type):  #TODO: Support sizeof(classname) (First will have to add that to symbol table.)
 		if type == 'boolean':
 			return 1 #This is JVM dependent
 		elif type == 'int' or type == 'float':
@@ -554,7 +554,9 @@ class myParseTreeVisitor(java8Visitor):
 					symTable.addSymbol('variables',varIdentifier,varInfo)
 					if 'value' in var:
 						self.__typecheck__(var['value']['type'],localVariableInfo['type'])
-						tac.append(varIdentifier,'',var['value']['name'],'=')
+						tac.append(varIdentifier,'',var['value']['name'],'=') #TODO: Since a variableDeclaratorList may have multiple vars, this should be done individually at each node.
+		# Cases to handle: variableDeclaratorList will send up a unique type (that all its declared variables must be having from there initializations, if any). Check if the type matches.
+		# Eg. int a=1.0, b=3, c should give error. int a=1,b='a' should work with b being typecasted to int.
 		return
 	
 	def visitVariableInitializerList(self, ctx:java8Parser.VariableInitializerListContext):
@@ -588,18 +590,6 @@ class myParseTreeVisitor(java8Visitor):
 			variable_declarator_id["dims"] = self.visitDims(ctx.getChild(1))
 		return variable_declarator_id
 
-	def visitVariableInitializer(self, ctx:java8Parser.VariableInitializerListContext):
-		'''
-		variableInitializer : expression
-		|	arrayInitializer
-		;
-		'''
-		child = ctx.getChild(0)
-		if (java8Parser.ruleNames[child.getRuleIndex()] == "expression"):
-			return self.visitExpression(child)
-		elif (java8Parser.ruleNames[child.getRuleIndex()] == "arrayInitializer"):
-			return self.visitArrayInitializer(child)
-
 	def visitVariableDeclarator(self, ctx:java8Parser.VariableDeclaratorContext):
 		'''
 		variableDeclarator : variableDeclaratorId ('=' variableInitializer)?
@@ -607,7 +597,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		variable_declarator = self.visitVariableDeclaratorId(ctx.getChild(0))
 		if (ctx.getChildCount() == 3):
-			variable_declarator["value"] = self.visitVariableInitializer(ctx.getChild(2))
+			variable_declarator["value"] = self.visitVariableInitializer(ctx.getChild(2)) #TODO: Add initialization to TAC.
 		return variable_declarator
 			
 
@@ -702,7 +692,7 @@ class myParseTreeVisitor(java8Visitor):
 				fieldInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
 				fType = self.visitUnanntype(child)
-				fieldInfo['type'] = fType['type_base']
+				fieldInfo['type'] = fType['type_base'] #TODO: Iss function and recursively issey related nodes par type {'base':'int'/etc., 'dims':0/1/etc.} kro
 				fieldInfo['dims'] = fType['type_dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				#If the reduction is already to a block need not change scope
@@ -735,7 +725,7 @@ class myParseTreeVisitor(java8Visitor):
 		elif isinstance(children[1], self.parser.UnaryExpressionContext):
 			if children[0].getText() == '-':	#Rule 4
 				c = self.visitUnaryExpression(children[1])
-				if c['type'] not in ['float', 'double', 'long', 'int']:
+				if c['type']['dims'] != 0 or c['type']['base'] not in ['float', 'double', 'long', 'int']:
 					self.__errorHandler__(ctx,"- defined only for int, long, float and double")
 				temp = symTable.getTemporary()
 				tac.append(c['name'], None, temp, 'neg')
@@ -752,7 +742,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		children = self.__getChildren__(ctx)
 		c = self.visitUnaryExpression(children[1])
-		if c.get('type') not in ['long', 'float', 'int', 'double']:
+		if c['type']['dims'] != 0 or c['type']['base'] not in ['long', 'float', 'int', 'double']:
 			self.__errorHandler__(ctx,"++ defined only for int, long, float and double")
 		tac.append(c['name'],1,c['name'],'+')
 		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
@@ -765,7 +755,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		children = self.__getChildren__(ctx)
 		c = self.visitUnaryExpression(children[1])
-		if c.get('type') not in ['long', 'float', 'int', 'double']:
+		if c['type']['dims'] != 0 or c['type']['base'] not in ['long', 'float', 'int', 'double']:
 			self.__errorHandler__(ctx,"++ defined only for int, long, float and double")
 		tac.append(c['name'],1,c['name'],'-')
 		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
@@ -810,7 +800,6 @@ class myParseTreeVisitor(java8Visitor):
 		children = self.__getChildren__(ctx)
 		if(isinstance(children[0], self.parser.NameContext)):
 			return self.visitName(children[0])
-		# TODO: a = a++ + a++ not working.
 		return self.visitChildren(ctx)
 
 	def visitUnaryExpressionNotPlusMinus(self, ctx:java8Parser.UnaryExpressionNotPlusMinusContext):
@@ -830,13 +819,13 @@ class myParseTreeVisitor(java8Visitor):
 		c = self.visitUnaryExpression(children[1])
 		temp = symTable.getTemporary()
 		if children[0].getText() == '~':
-			if c['type'] not in ['int', 'long']:
+			if c['type']['dims'] != 0 or c['type']['base'] not in ['int', 'long']:
 				self.__errorHandler__(ctx,"~ defined only for int, long")
 			tac.append(c['name'], None, temp, 'complement') #Bitwise complement of an integer ~
 		else:
-			if c['type'] != 'boolean':
+			if c['type']['dims'] != 0 or c['type']['base'] != 'boolean':
 				self.__errorHandler__(ctx,"~ defined only for boolean")
-			tac.append(c['name'], None, temp, 'invert') #Boolean invert !
+			tac.append(c['name'], None, temp, 'invert') #Boolean invert ! #TODO: @Pandey, will this have truelist/falselist?
 		return {'name': temp, 'type': c['type'],'true_list': [], 'false_list':[]}
 
 
@@ -1013,28 +1002,28 @@ class myParseTreeVisitor(java8Visitor):
 		if childType == java8Lexer.IntegerLiteral:
 			if text[-1] == 'l' or text[-1] == 'L': #long
 				tac.append(int(text[:-1]), None, temp, '=') #Wishlist: Assuming only integer literals. Binary,octal and hex not handled.
-				return {'name' : temp, 'type': 'long'}
+				return {'name' : temp, 'type': {'base':'long', 'dims': 0}}
 			else:
 				tac.append(int(text), None, temp, '=')
-				return {'name' : temp, 'type': 'int'}
+				return {'name' : temp, 'type': {'base':'int', 'dims': 0}}
 		elif childType == java8Lexer.FloatingPointLiteral:
 			if text[-1] == 'f' or text[-1] == 'F': #float
 				tac.append(float(text[:-1]), None, temp, '=') 
-				return {'name': temp, 'type': 'float'}
+				return {'name' : temp, 'type': {'base':'float', 'dims': 0}}
 			else:
 				tac.append(float(text), None, temp, '=')
-				return {'name': temp, 'type': 'double'}
+				return {'name' : temp, 'type': {'base':'double', 'dims': 0}}
 		elif childType == java8Lexer.BooleanLiteral: 
 			if text == 'true':
 				tac.append(True, None, temp, '=')
 			else :
 				tac.append(False, None, temp, '=')
 			#TODO: ISME TRUE_LIST AUR FALSE_LIST WALA KAAM KRO. In general, boolean literals/variables/expressions jaha bhi hain waha check krlo.
-			return {'type': 'boolean','name': 'temp', 'true_list': [], 'false_list': []}
+			return {'type': {'base': 'boolean', 'dims': 0},'name': 'temp', 'true_list': [], 'false_list': []}
 		elif childType == java8Lexer.StringLiteral:
 			str_idx = symTable.addStringConstant(text)
 			tac.append(':str'+str(str_idx)+':', None, temp, '=')
-			return {'name': temp, 'type': 'String'}
+			return {'name' : temp, 'type': {'base':'String', 'dims': 0}}
 		self.__errorHandler__(ctx,"Only integer, float and boolean literals are supported.")
 	
 
@@ -1069,10 +1058,10 @@ class myParseTreeVisitor(java8Visitor):
 		# Note: While declaring arrays we will have to assign values up till n-1 dimensions of the array.
 		# Confirm all expressions are ints.
 		return
-		if p[0]['type'] != 'pointer' or p[0]['pointer_info']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
+		if p[0]['type']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
 			self.__errorHandler__(ctx, ctx.getChild(0).getText() + " must be an array/pointer.")
 		for i in range(n_dims):
-			if p[4*i+2]['type'] != 'int':
+			if p[4*i+2]['type']['base'] != 'int' or p[4*i+2]['type']['dims'] != 0:
 				self.__errorHandler__(ctx, "Array indices must be integers")
 
 		#For each dimension generate tac to read from that level and keep on 'dereferencing' from the locations. (i-th level pointer)
@@ -1083,7 +1072,7 @@ class myParseTreeVisitor(java8Visitor):
 			if i < n_dims - 1:
 				unitSize = __sizeof__('pointer')
 			else:
-				unitSize = __sizeof__(p[0]['pointer_info']['type'])
+				unitSize = __sizeof__(p[0]['type']['base'])
 			assert(unitSize)
 			tac.append(unitSize, idx_name, offset, '*')
 			addr = symTable.getTemporary()
@@ -1092,10 +1081,7 @@ class myParseTreeVisitor(java8Visitor):
 			tac.append(addr, None, value, 'deref') #dereference the value at addr and assign to variable 'value'.
 			base = value			
 		
-		if n_dims < p[0]['pointer_info']['dims']:
-			return {'name': base, 'type': 'pointer', 'pointer_info': p[0]['pointer_info']['dims'] - n_dims}
-		else:
-			return {'name': base, 'type': p[0]['pointer_info']['type']}
+		return {'name': base, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims}}
 
 	
 	def __handleMethods__(self,ctx):
@@ -1173,7 +1159,7 @@ class myParseTreeVisitor(java8Visitor):
 			lhs = children[0].accept(self)
 			true_idx = []
 			false_idx = []
-			if(lhs['type'] != 'boolean'):
+			if(lhs['type']['base'] != 'boolean' or lhs['type']['dims'] != 0):
 				self.__errorHandler__(ctx,op + " defined only for boolean")
 			if(op == '||'):
 				true_idx.append(tac.append('','','',lhs['name']))
@@ -1182,37 +1168,39 @@ class myParseTreeVisitor(java8Visitor):
 				tac.append(temp,'',lhs['name'],'!')
 				false_idx.append(tac.append('','','',lhs['name']))
 			rhs = children[2].accept(self)
-			if(rhs['type'] != 'boolean'):
+			if(rhs['type']['base'] != 'boolean' or rhs['type']['dims'] != 0):
 				self.__errorHandler__(ctx,op + " defined only for boolean")
 			tac.append(rhs['name'],'',lhs['name'],op)
-			return {'name': lhs['name'], 'type':'boolean','true_list': 
+			return {'name': lhs['name'], 'type': lhs['type'],'true_list': 
 					true_idx + lhs['true_list'] + rhs['true_list'],
 					'false_list': false_idx + lhs['false_list']+rhs['false_list']}
 
+		if commonType['dims'] != 0:
+			self.__errorHandler__(ctx, op + " not defined for pointers")
 		elif op in ['^', '|', '&']: # Bitwise ops
-			if commonType not in ['int', 'boolean', 'long']:
+			if commonType['base'] not in ['int', 'boolean', 'long']:
 				self.__errorHandler__(ctx,op + " defined only for int, long and boolean")
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		elif op in ['<', '>', '<=', '>=','==','!=']: #Relational operators
-			if commonType not in ['int', 'long', 'double', 'float']:
+			if commonType['base'] not in ['int', 'long', 'double', 'float']:
 				self.__errorHandler__(ctx,op + " defined only for int, long and double and float")
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			# idx = tac.append('','','',temp)
-			return {'name':temp, 'type': 'boolean', 'true_list': [], 'false_list':[]}
+			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		elif op == 'instanceof':
 			#TODO: check symbol table and inheritance hierarchy and return value here itself.
 			pass
 		elif op in ['>>>', '<<', '>>']: # Shift operators
-			if commonType not in ['int', 'long']:
+			if commonType['base'] not in ['int', 'long']:
 				self.__errorHandler__(ctx,op + " defined only for int and long")
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		elif op in ['+', '-', '/', '*', '%']:
-			if commonType not in ['int', 'long' , 'double', 'float']:
+			if commonType['base'] not in ['int', 'long' , 'double', 'float']:
 				self.__errorHandler__(ctx,op + " defined only for int, long, float and double")
 			#May need to send different operators for each type as assembly instructions are diff. Will look at this later.
 			temp = symTable.getTemporary()
