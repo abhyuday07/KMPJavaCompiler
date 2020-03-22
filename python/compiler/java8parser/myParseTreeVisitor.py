@@ -84,7 +84,7 @@ class myParseTreeVisitor(java8Visitor):
 			return type1
 		else:
 			return None
-	def __sizeof__(self, type):  #TODO: Support sizeof(classname) (First will have to add that to symbol table.)
+	def __sizeof__(self, type):  #TODO: Support sizeof(classname) (First will have to add that to symbol table.). Part of implementing arrays of objects.
 		if type == 'boolean':
 			return 1 #This is JVM dependent
 		elif type == 'int' or type == 'float':
@@ -554,9 +554,8 @@ class myParseTreeVisitor(java8Visitor):
 					symTable.addSymbol('variables',varIdentifier,varInfo)
 					if 'value' in var:
 						self.__typecheck__(var['value']['type'],localVariableInfo['type'])
-						tac.append(varIdentifier,'',var['value']['name'],'=') #TODO: Since a variableDeclaratorList may have multiple vars, this should be done individually at each node.
-		# Cases to handle: variableDeclaratorList will send up a unique type (that all its declared variables must be having from there initializations, if any). Check if the type matches.
-		# Eg. int a=1.0, b=3, c should give error. int a=1,b='a' should work with b being typecasted to int.
+						tac.append(var['value']['name'],None,varIdentifier,'=')
+		#TODO:to be done while implementing typecasting. check and cast types appropriately.
 		return
 	
 	def visitVariableInitializerList(self, ctx:java8Parser.VariableInitializerListContext):
@@ -597,7 +596,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		variable_declarator = self.visitVariableDeclaratorId(ctx.getChild(0))
 		if (ctx.getChildCount() == 3):
-			variable_declarator["value"] = self.visitVariableInitializer(ctx.getChild(2)) #TODO: Add initialization to TAC.
+			variable_declarator["value"] = self.visitVariableInitializer(ctx.getChild(2)) #TODO: Check if int a=2, b=a*a; works.
 		return variable_declarator
 			
 
