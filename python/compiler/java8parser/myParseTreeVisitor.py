@@ -49,21 +49,23 @@ class myParseTreeVisitor(java8Visitor):
 
 	def __getSize__(self,ttype):
 		if(ttype.get('dims')>0):
-			return 64
-		elif(ttype == 'boolean'):
+			return 8
+		elif(ttype.get('base') == 'boolean'):
 			return 1
-		elif(ttype == 'byte'):
+		elif(ttype.get('base') == 'byte'):
+			return 1
+		elif(ttype.get('base') == 'char'):
+			return 1
+		elif(ttype.get('base') == 'short'):
+			return 2
+		elif(ttype.get('base') == 'int'):
+			return 4
+		elif(ttype.get('base') == 'float'):
+			return 4
+		elif(ttype.get('base') == 'double'):
 			return 8
-		elif(ttype == 'char'):
-			return 8
-		elif(ttype == 'short'):
-			return 16
-		elif(ttype == 'int'):
-			return 32
-		elif(ttype == 'float'):
-			return 32
-		elif(ttype == 'double'):
-			return 64
+		else:
+			return 0
 
 	def __getChildren__(self,ctx,onlyTerminalNodes = False):
 		'''
@@ -102,16 +104,6 @@ class myParseTreeVisitor(java8Visitor):
 			return type1
 		else:
 			return None
-	def __sizeof__(self, type):  #TODO: Support sizeof(classname) (First will have to add that to symbol table.). Part of implementing arrays of objects.
-		if type == 'boolean':
-			return 1 #This is JVM dependent
-		elif type == 'int' or type == 'float':
-			return 4
-		elif type == 'long' or type == 'double' or type == 'pointer':
-			return 8
-		else:
-			return None
-		
 
 	def __errorHandler__(self, ctx,err,e=0):
 		self.exceptionHandler.raiseException(ctx,err,e)
@@ -611,14 +603,14 @@ class myParseTreeVisitor(java8Visitor):
 			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']}}
 		elif(len(dims) == 1):
 			size = symTable.getTemporary()
-			tac.append(dims[0],'64',size,'*')
+			tac.append(dims[0],str(self.__getSize__(ptype)),size,'*')
 			tac.append(str(size),'',':param1:','=')
 			tac.append('','','malloc','function')
 			return {'name':':r:', 'type':{'base':ptype['base'],'dims':ptype['dims']+1}}
 		else:
 			# everything in bits
 			size = symTable.getTemporary()
-			tac.append(dims[0],'64',size,'*')
+			tac.append(dims[0],str(self.__getSize__({'dims':1})),size,'*')
 			tac.append(size,'',':param1:','=')
 			tac.append('','','malloc','function')
 			temp_reg = symTable.getTemporary()
@@ -630,7 +622,7 @@ class myParseTreeVisitor(java8Visitor):
 			tac.append(temp_reg,temp_reg_total,bool_reg_total,'<')
 			jump_idx = tac.append('','','',bool_reg_total)
 			allocInfo = self.__recursiveAlloc__(dims[1:],ptype)
-			tac.append(temp_reg,'64',temp_reg,'+')
+			tac.append(temp_reg,str(self.__getSize__({'dims':1})),temp_reg,'+')
 			tac.append(allocInfo['name'],'',temp_reg,'store')
 			tac.append('','',jump_label,'goto')
 			tac.backpatch([jump_idx],tac.genLabel())
@@ -1347,7 +1339,7 @@ class myParseTreeVisitor(java8Visitor):
 		for i in range(n_dims):
 			idx_name = p[4*i+2]['name']
 			offset = symTable.getTemporary()
-			unitSize = self.__sizeof__({'dims':1})
+			unitSize = self.__getSize__({'dims':1})
 			tac.append(unitSize, idx_name, offset, '*')
 			addr = symTable.getTemporary()
 			tac.append(base, offset, addr, '+')
