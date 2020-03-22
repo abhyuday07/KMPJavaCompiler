@@ -608,7 +608,7 @@ class myParseTreeVisitor(java8Visitor):
 			tac.append('','','malloc','function')
 			return {'name':':r:', 'type':{'base':ptype['base'],'dims':ptype['dims']+1}}
 		else:
-			# everything in bits
+			# everything in byte
 			size = symTable.getTemporary()
 			tac.append(dims[0],str(self.__getSize__({'dims':1})),size,'*')
 			tac.append(size,'',':param1:','=')
