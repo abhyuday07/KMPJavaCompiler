@@ -8,7 +8,7 @@ else:
 	from java8Parser import java8Parser
 	from java8Visitor import java8Visitor
 	from java8Lexer import java8Lexer
-
+import collections
 
 class firstPassTreeVisitor(java8Visitor):
 	def __init__(self,parser,lexer,symTable):
@@ -50,7 +50,10 @@ class firstPassTreeVisitor(java8Visitor):
 		classIdentifier = None
 		classInfo = {
 			'modifiers': [],
-			'type': None,
+			'type': {
+				'base': None,
+				'dims': 0
+			},
 			'parameters': None
 		}
 		children = self.__getChildren__(ctx)
@@ -70,7 +73,10 @@ class firstPassTreeVisitor(java8Visitor):
 		methodIdentifier = None
 		methodInfo = {
 			'modifiers': [],
-			'type': None,
+			'type': {
+				'base': None,
+				'dims': 0
+			},
 			'parameters': None
 		}
 		children = self.__getChildren__(ctx)
@@ -91,13 +97,16 @@ class firstPassTreeVisitor(java8Visitor):
 		methodHeader : result methodDeclarator throws_?
 		|	typeParameters annotation* result methodDeclarator throws_?
 		'''
-		methodType = None
+		methodType = {
+			'base' : None,
+			'dims' : 0
+		}
 		methodIdentifier = None
 		methodParameters = None
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ResultContext)):
-				methodType = child.getText()
+				methodType = self.visitResult(child)
 			elif(isinstance(child,self.parser.MethodDeclaratorContext)):
 				methodIdentifier, methodParameters = self.visitMethodDeclarator(child)
 		return methodIdentifier, methodType, methodParameters
@@ -107,13 +116,12 @@ class firstPassTreeVisitor(java8Visitor):
 		methodDeclarator : Identifier '(' formalParameterList? ')' dims?
 		'''
 		methodIdentifier = None
-		methodParameters = {}
+		methodParameters = collections.OrderedDict
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(self.__isIdentifier__(child)):
 				methodIdentifier = child.getText()
 			if(isinstance(child,self.parser.FormalParameterListContext)):
-				paramList = child.getText()
 				methodParameters = self.visitFormalParameterList(child)
 		return methodIdentifier, methodParameters
 
@@ -124,7 +132,7 @@ class firstPassTreeVisitor(java8Visitor):
 		| 	lastFormalParameter
 		;
 		'''
-		fpDict = {}
+		fpDict = collections.OrderedDict()
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.FormalParametersContext)):
@@ -143,7 +151,7 @@ class firstPassTreeVisitor(java8Visitor):
 		|	receiverParameter (',' formalParameter)*
 		;
 		'''
-		fpDict = {}
+		fpDict = collections.OrderedDict
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ReceiverParameterContext)):
@@ -151,6 +159,7 @@ class firstPassTreeVisitor(java8Visitor):
 				pass
 			if(isinstance(child,self.parser.FormalParameterContext)):
 				fpIdentifier, fpInfo = self.visitFormalParameter(child)
+				print(fpIdentifier)
 				fpDict[fpIdentifier] = fpInfo
 		return fpDict
 
@@ -162,8 +171,10 @@ class firstPassTreeVisitor(java8Visitor):
 		fpIdentifier = None
 		fpInfo = {
 			'modifiers': [],
-			'type': None,
-			'dims': None
+			'type':{
+			 	'base': None,
+			 	'dims': 0
+			 }
 		}
 		children = self.__getChildren__(ctx)
 		for child in children:
@@ -172,12 +183,12 @@ class firstPassTreeVisitor(java8Visitor):
 			if(isinstance(child,self.parser.UnanntypeContext)):
 				fpType = self.visitUnanntype(child)
 				# print(fpType)
-				fpInfo['type'] = fpType['type_base']
-				fpInfo['dims'] = fpType['type_dims']
+				fpInfo['type']['base'] = fpType['base']
+				fpInfo['type']['dims'] = fpType['dims']
 			if(isinstance(child,self.parser.VariableDeclaratorIdContext)):
 				var = self.visitVariableDeclaratorId(child)
 				fpIdentifier = var['identifier']
-				fpInfo['dims'] = var['dims']
+				fpInfo['type']['dims'] += var['dims']
 		# print(fpInfo)
 		return fpIdentifier, fpInfo
 
@@ -198,7 +209,7 @@ class firstPassTreeVisitor(java8Visitor):
 		'''
 		variableDeclaratorId : Identifier dims?
 		'''
-		variable_declarator_id= {"identifier": ctx.getChild(0).getText(), "dims":[]}
+		variable_declarator_id= {"identifier": ctx.getChild(0).getText(), "dims":0}
 		if (ctx.getChildCount() == 2):
 			variable_declarator_id["dims"] = self.visitDims(ctx.getChild(1))
 		return variable_declarator_id
@@ -209,8 +220,8 @@ class firstPassTreeVisitor(java8Visitor):
 				|	unannReferencetype
 				;
 		'''
-		# return type as a dict with keys "type_base" and "type_dims"
-		# "type_dims" is a tuple with 1-3 values, each one can be -1 of non-neg
+		# return type as a dict with keys "base" and "dims"
+		# "dims" is a tuple with 1-3 values, each one can be -1 of non-neg
 		# if -1, then that means that value has to be interpreted from the initialized value
 		return self.visitChildren(ctx)
 	
@@ -220,7 +231,7 @@ class firstPassTreeVisitor(java8Visitor):
 				|	BOOLEAN
 				;
 		'''
-		return {"type_base": ctx.getText(), "type_dims":[]}
+		return {"base": ctx.getText(), "dims":0}
 
 	def visitUnannReferenceType(self, ctx:java8Parser.UnannReferencetypeContext):
 		'''
@@ -232,16 +243,16 @@ class firstPassTreeVisitor(java8Visitor):
 		return self.visitChildren(ctx)
 	
 	def visitUnannClassOrInterfaceType(self, ctx:java8Parser.UnannClassOrInterfaceTypeContext):
-		return {"type_base": ctx.getText(), "type_dims":[]}
+		return {"base": ctx.getText(), "dims":0}
 
 	def visitUnanntypeVariable(self, ctx:java8Parser.UnanntypeVariableContext):
-		return {"type_base": ctx.getText(), "type_dims":[]}
+		return {"base": ctx.getText(), "dims":0}
 
 	def visitDims(self, ctx:java8Parser.DimsContext):
-		dims = []
+		dims = 0
 		for child in self.__getChildren__(ctx):
 			if (child.getText() == '['):
-				dims.append(-1)
+				dims += 1
 		return dims
 
 	def visitUnannArraytype(self, ctx:java8Parser.UnannArraytypeContext):
@@ -251,18 +262,18 @@ class firstPassTreeVisitor(java8Visitor):
 				|	unanntypeVariable dims
 		;
 		'''
-		dtype = {"type_base": "", "type_dims":[]}
+		dtype = {"base": "", "dims":0}
 		child0 = ctx.getChild(0)
 		child1 = ctx.getChild(1)
-		dtype["type_dims"] = self.visitDims(child1)
+		dtype["dims"] = self.visitDims(child1)
 		if (java8Parser.ruleNames[child0.getRuleIndex()] == "unannPrimitiveType"):
-			dtype["type_base"] = self.visitUnannPrimitiveType(child0)["type_base"]
+			dtype["base"] = self.visitUnannPrimitiveType(child0)["base"]
 		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unannClassOrInterfaceType"):
 			# Not handled
 			# pass
-			dtype["type_base"] = self.visitUnannClassOrInterfaceType(child0)["type_base"]
+			dtype["base"] = self.visitUnannClassOrInterfaceType(child0)["base"]
 		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unanntypeVariable"):
-			dtype["type_base"] = self.visitUnanntypeVariable(child0)["type_base"]
+			dtype["base"] = self.visitUnanntypeVariable(child0)["base"]
 		return dtype
 
 	def visitBlock(self, ctx:java8Parser.BlockContext):

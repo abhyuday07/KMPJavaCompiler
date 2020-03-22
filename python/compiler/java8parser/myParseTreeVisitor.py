@@ -47,6 +47,24 @@ class myParseTreeVisitor(java8Visitor):
 		else:
 			return False
 
+	def __getSize__(self,ttype):
+		if(ttype.get('dims')>0):
+			return 64
+		elif(ttype == 'boolean'):
+			return 1
+		elif(ttype == 'byte'):
+			return 8
+		elif(ttype == 'char'):
+			return 8
+		elif(ttype == 'short'):
+			return 16
+		elif(ttype == 'int'):
+			return 32
+		elif(ttype == 'float'):
+			return 32
+		elif(ttype == 'double'):
+			return 64
+
 	def __getChildren__(self,ctx,onlyTerminalNodes = False):
 		'''
 		Returns all the child in form of a list
@@ -532,7 +550,10 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		localVariableInfo = {
 			'modifiers': [],
-			'type': None,
+			'type': {
+				'base' : None,
+				'dims' : 0
+			},
 			'parameters': None,
 			'dims' : None
 		}
@@ -542,15 +563,15 @@ class myParseTreeVisitor(java8Visitor):
 				localVariableInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
 				vdType = self.visitUnanntype(child)
-				localVariableInfo['type'] = vdType['type_base']
-				localVariableInfo['dims'] = vdType['type_dims']
+				localVariableInfo['type']['base'] = vdType['base']
+				localVariableInfo['type']['dims'] = vdType['dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				vdList = self.visitVariableDeclaratorList(child)
 				for var in vdList:
 					varIdentifier = var['identifier']
 					varInfo = localVariableInfo.copy()
 					# Both C-type and Java type dimensions supported
-					varInfo['dims'] = var['dims']
+					varInfo['type']['dims'] += var['dims']
 					symTable.addSymbol('variables',varIdentifier,varInfo)
 					if 'value' in var:
 						self.__typecheck__(var['value']['type'],localVariableInfo['type'])
@@ -580,11 +601,92 @@ class myParseTreeVisitor(java8Visitor):
 				initializer_value = self.visitVariableInitializerList(child)
 		return initializer_value
 
+	def __recursiveAlloc__(self,dims,ptype):
+		# creates an array of ptype[dims[0]][dims[1]]...
+		if(len(dims) == 0):
+			size = self.__getSize__(ptype)
+			tac.append(str(size),'',':param1:','=')
+			tac.append('','','malloc','function')
+			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']}}
+		elif(len(dims) == 1):
+			size = symTable.getTemporary()
+			tac.append(dims[0],'64',size,'*')
+			tac.append(str(size),'',':param1:','=')
+			tac.append('','','malloc','function')
+			return {'name':':r:', 'type':{'base':ptype['base'],'dims':ptype['dims']+1}}
+		else:
+			# everything in bits
+			size = symTable.getTemporary()
+			tac.append(dims[0],'64',size,'*')
+			tac.append(size,'',':param1:','=')
+			tac.append('','','malloc','function')
+			temp_reg = symTable.getTemporary()
+			tac.append(':r:','',temp_reg,'=')
+			temp_reg_total = symTable.getTemporary()
+			tac.append(temp_reg,size,temp_reg_total,'=')
+			jump_label = tac.genLabel()
+			bool_reg_total = symTable.getTemporary()
+			tac.append(temp_reg,temp_reg_total,bool_reg_total,'<')
+			jump_idx = tac.append('','','',bool_reg_total)
+			allocInfo = self.__recursiveAlloc__(dims[1:],ptype)
+			tac.append(temp_reg,'64',temp_reg,'+')
+			tac.append(allocInfo['name'],'',temp_reg,'load')
+			tac.append('','',jump_label,'goto')
+			tac.backpatch([jump_idx],tac.genLabel())
+			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']+len(dims)}}
+
+
+
+	def visitArrayCreationExpression(self, ctx:java8Parser.ArrayCreationExpressionContext):
+		'''
+		arrayCreationExpression : NEW primitivetype dimExprs dims?
+                        | NEW classOrInterfaceType dimExprs dims?
+                        | NEW primitivetype dims arrayInitializer
+                        | NEW classOrInterfaceType dims arrayInitializer
+                        ;
+		'''
+		# All allocations in Java are dynamic
+		# there are no static allocations
+		# Only handles NEW primitivetype dimExprs
+		ptype = {
+			'base' : None,
+			'dims' : 0
+		}
+		dims_with_expr = []
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.PrimitivetypeContext)):
+				ptype['base'] = child.getText()
+			elif(isinstance(child,self.parser.DimExprsContext)):
+				dims_with_expr = self.visitDimExprs(child)
+			elif(isinstance(child,self.parser.DimsContext)):
+				ptype['dims'] = self.visitDims(child)
+		# print(dims_with_expr,ptype)
+		return self.__recursiveAlloc__(dims_with_expr,ptype)
+
+	def visitDimExprs(self, ctx: java8Parser.DimExprsContext):
+		'''
+		dimExprs : dimExpr dimExpr*
+        ;
+
+		dimExpr : annotation* '[' expression ']'
+        ;
+		'''
+		dims = []
+		children = self.__getChildren__(ctx)
+		for child in children:
+			assert(child.getChildCount() == 3)
+			exprInfo = self.visitExpression(child.getChild(1))
+			if(exprInfo['type'] != {'base':'int', 'dims':0}):
+				self.__errorHandler__(child,"dimension can only be an integer expression")
+			else:
+				dims.append(exprInfo['name'])
+		return dims
 	def visitVariableDeclaratorId(self, ctx:java8Parser.VariableDeclaratorIdContext):
 		'''
 		variableDeclaratorId : Identifier dims?
 		'''
-		variable_declarator_id= {"identifier": ctx.getChild(0).getText(), "dims":[]}
+		variable_declarator_id= {"identifier": ctx.getChild(0).getText(), "dims":0}
 		if (ctx.getChildCount() == 2):
 			variable_declarator_id["dims"] = self.visitDims(ctx.getChild(1))
 		return variable_declarator_id
@@ -617,8 +719,8 @@ class myParseTreeVisitor(java8Visitor):
 				|	unannReferencetype
 				;
 		'''
-		# return type as a dict with keys "type_base" and "type_dims"
-		# "type_dims" is a tuple with 1-3 values, each one can be -1 of non-neg
+		# return type as a dict with keys "base" and "dims"
+		# "dims" is a tuple with 1-3 values, each one can be -1 of non-neg
 		# if -1, then that means that value has to be interpreted from the initialized value
 		return self.visitChildren(ctx)
 	
@@ -628,7 +730,7 @@ class myParseTreeVisitor(java8Visitor):
 				|	BOOLEAN
 				;
 		'''
-		return {"type_base": ctx.getText(), "type_dims":[]}
+		return {"base": ctx.getText(), "dims":0}
 
 	def visitUnannReferenceType(self, ctx:java8Parser.UnannReferencetypeContext):
 		'''
@@ -640,16 +742,16 @@ class myParseTreeVisitor(java8Visitor):
 		return self.visitChildren(ctx)
 	
 	def visitUnannClassOrInterfaceType(self, ctx:java8Parser.UnannClassOrInterfaceTypeContext):
-		return {"type_base": ctx.getText(), "type_dims":[]}
+		return {"base": ctx.getText(), "dims":0}
 
 	def visitUnanntypeVariable(self, ctx:java8Parser.UnanntypeVariableContext):
-		return {"type_base": ctx.getText(), "type_dims":[]}
+		return {"base": ctx.getText(), "dims":0}
 
 	def visitDims(self, ctx:java8Parser.DimsContext):
-		dims = []
+		dims = 0
 		for child in self.__getChildren__(ctx):
 			if (child.getText() == '['):
-				dims.append(-1)
+				dims += 1
 		return dims
 
 	def visitUnannArraytype(self, ctx:java8Parser.UnannArraytypeContext):
@@ -659,18 +761,18 @@ class myParseTreeVisitor(java8Visitor):
 				|	unanntypeVariable dims
 		;
 		'''
-		dtype = {"type_base": "", "type_dims":[]}
+		dtype = {"base": "", "dims":0}
 		child0 = ctx.getChild(0)
 		child1 = ctx.getChild(1)
-		dtype["type_dims"] = self.visitDims(child1)
+		dtype["dims"] = self.visitDims(child1)
 		if (java8Parser.ruleNames[child0.getRuleIndex()] == "unannPrimitiveType"):
-			dtype["type_base"] = self.visitUnannPrimitiveType(child0)["type_base"]
+			dtype["base"] = self.visitUnannPrimitiveType(child0)["base"]
 		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unannClassOrInterfaceType"):
 			# Not handled
 			# pass
-			dtype["type_base"] = self.visitUnannClassOrInterfaceType(child0)["type_base"]
+			dtype["base"] = self.visitUnannClassOrInterfaceType(child0)["base"]
 		elif (java8Parser.ruleNames[child0.getRuleIndex()] == "unanntypeVariable"):
-			dtype["type_base"] = self.visitUnanntypeVariable(child0)["type_base"]
+			dtype["base"] = self.visitUnanntypeVariable(child0)["base"]
 		return dtype
 
 	def visitFieldDeclaration(self, ctx:java8Parser.FieldDeclarationContext):
@@ -681,7 +783,10 @@ class myParseTreeVisitor(java8Visitor):
 		fieldIdentifiers = []
 		fieldInfo = {
 			'modifiers': [],
-			'type': None,
+			'type': {
+				'base' : None,
+				'dims' : 0
+			},
 			'parameters': None,
 			'dims': None
 		}
@@ -691,15 +796,15 @@ class myParseTreeVisitor(java8Visitor):
 				fieldInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
 				fType = self.visitUnanntype(child)
-				fieldInfo['type'] = fType['type_base'] #TODO: Iss function and recursively issey related nodes par type {'base':'int'/etc., 'dims':0/1/etc.} kro
-				fieldInfo['dims'] = fType['type_dims']
+				fieldInfo['type']['base'] = fType['base'] #TODO: Iss function and recursively issey related nodes par type {'base':'int'/etc., 'dims':0/1/etc.} kro
+				fieldInfo['type']['dims'] = fType['dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				#If the reduction is already to a block need not change scope
 				fieldIdentifiers = self.visitVariableDeclaratorList(child)
 				for var in fieldIdentifiers:
 					varIdentifier = var['identifier']
 					varInfo = fieldInfo.copy()
-					varInfo['dims'] = var['dims']
+					varInfo['type']['dims'] = var['dims']
 					# varInfo['value'] = var['value']
 					symTable.addSymbol('variables',varIdentifier,varInfo)
 		return
@@ -873,7 +978,7 @@ class myParseTreeVisitor(java8Visitor):
 		# SNIPPET END
 		#TODO: How to handle field accesses. Now handled only 'name' and 'arrayAccess'.
 		if isinstance(ctx.getChild(0).getChild(0), self.parser.ArrayAccessContext):
-			commonType = self.__typecheck__({'base': p[0]['type']['base'], dims: p[0]['type']['dims']-1}, p[2]['type'])
+			commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
 			if not commonType:
 				self.__errorHandler__(ctx,"Types don't match")
 			temp = symTable.getTemporary() #to store the new value
@@ -886,6 +991,7 @@ class myParseTreeVisitor(java8Visitor):
 			tac.append(temp, None, p[0]['name'], 'store') # p[0]['name'] stores the address and temp stores the value to be stored.
 			return {'type': commonType, 'name': temp, 'true_list': [], 'false_list': []}
 		elif isinstance(ctx.getChild(0).getChild(0), self.parser.NameContext):
+			commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
 			if(p[1]['operator'] == '='):
 				tac.append(p[2]['name'], None, p[0].get('name'), '=')
 			else:
@@ -1064,7 +1170,7 @@ class myParseTreeVisitor(java8Visitor):
 	    ;
 		'''
 		# Similar to array access primary. Just returns the last level pointer instead of assigning it to a temporary.
-		return self.__arrayAccessLastPointer__(self, ctx)
+		return self.__arrayAccessLastPointer__(ctx)
 
 	def __handleMethods__(self,ctx):
 		'''
@@ -1088,6 +1194,7 @@ class myParseTreeVisitor(java8Visitor):
 			if(len(methodInfo['parameters']) != len(argProvided)):
 				self.__errorHandler__(ctx,"Number of arguments mismatch")
 			expParams = list(methodInfo['parameters'].keys())
+			# print(expParams,argProvided)
 			for i in range(0,len(argProvided)):
 				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
 					self.__errorHandler__(ctx,"Type of arguments mismatch")
@@ -1225,7 +1332,8 @@ class myParseTreeVisitor(java8Visitor):
 		# The first child will return a 'name' storing the 'address' of the first level array.
 		# Note: While declaring arrays we will have to assign values up till n-1 dimensions of the array.
 		# Confirm all expressions are ints.
-		return
+		# return
+		# print(p[0],p[1],p[2])
 		if p[0]['type']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
 			self.__errorHandler__(ctx, ctx.getChild(0).getText() + " must be an array/pointer.")
 		for i in range(n_dims):
@@ -1237,16 +1345,15 @@ class myParseTreeVisitor(java8Visitor):
 		for i in range(n_dims):
 			idx_name = p[4*i+2]['name']
 			offset = symTable.getTemporary()
-			unitSize = __sizeof__('pointer')
-			assert(unitSize)
+			unitSize = self.__sizeof__({'dims':1})
 			tac.append(unitSize, idx_name, offset, '*')
 			addr = symTable.getTemporary()
 			tac.append(base, offset, addr, '+')
 			if i < n_dims-1:
 				value = symTable.getTemporary()
 				tac.append(addr, None, value, 'load') #load the value at addr and assign to variable 'value'.
-			base = value			
-		return {'name': addr, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims+1}}
+				base = value			
+		return {'name': addr, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims}}
 
 	def visitMethodInvocation(self, ctx: java8Parser.MethodInvocationContext):
 		return self.__handleMethods__(ctx)
