@@ -1328,11 +1328,11 @@ class myParseTreeVisitor(java8Visitor):
 		# Confirm all expressions are ints.
 		# return
 		# print(p[0],p[1],p[2])
-		print(n_dims,p[0]['type']['dims'])
+		# print(n_dims,p[0]['type']['dims'])
 		if p[0]['type']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
 			self.__errorHandler__(ctx, ctx.getChild(0).getText() + " must be an array/pointer.")
 		for i in range(n_dims):
-			print(p)
+			# print(p)
 			if p[4*i+2]['type']['base'] != 'int' or p[4*i+2]['type']['dims'] != 0:
 				self.__errorHandler__(ctx, "Array indices must be integers")
 
