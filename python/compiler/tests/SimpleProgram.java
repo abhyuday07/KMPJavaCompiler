@@ -9,7 +9,7 @@ public class SimpleProgram {
     	return a;
     }
     public static void main (String args[]) {
-		int a=1,b=a;
+		int a=2,b=a*a;
 		// int c=3,d=4;
 
 		double p=3.0;

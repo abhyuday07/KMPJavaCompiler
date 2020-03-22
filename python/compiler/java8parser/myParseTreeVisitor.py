@@ -699,7 +699,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		variable_declarator = self.visitVariableDeclaratorId(ctx.getChild(0))
 		if (ctx.getChildCount() == 3):
-			variable_declarator["value"] = self.visitVariableInitializer(ctx.getChild(2)) #TODO: Check if int a=2, b=a*a; works.
+			variable_declarator["value"] = self.visitVariableInitializer(ctx.getChild(2))
 		return variable_declarator
 
 	def visitVariableDeclaratorList(self,ctx:java8Parser.VariableDeclaratorListContext):
@@ -796,7 +796,7 @@ class myParseTreeVisitor(java8Visitor):
 				fieldInfo['modifiers'].append(child.getText())
 			elif(isinstance(child,self.parser.UnanntypeContext)):
 				fType = self.visitUnanntype(child)
-				fieldInfo['type']['base'] = fType['base'] #TODO: Iss function and recursively issey related nodes par type {'base':'int'/etc., 'dims':0/1/etc.} kro
+				fieldInfo['type']['base'] = fType['base']
 				fieldInfo['type']['dims'] = fType['dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				#If the reduction is already to a block need not change scope
@@ -933,7 +933,7 @@ class myParseTreeVisitor(java8Visitor):
 		else:
 			if c['type']['dims'] != 0 or c['type']['base'] != 'boolean':
 				self.__errorHandler__(ctx,"~ defined only for boolean")
-			tac.append(c['name'], None, temp, 'invert') #Boolean invert ! #TODO: @Pandey, will this have truelist/falselist?
+			tac.append(c['name'], None, temp, 'invert') #Boolean invert
 		return {'name': temp, 'type': c['type'],'true_list': [], 'false_list':[]}
 
 
@@ -953,7 +953,6 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 
 		p = self.__visitChildren__(ctx)
-		# Handle short circuit. TODO: What is this?
 		# No handle short circuit just append this snippet
 		'''
 						[expr_code]
@@ -1138,7 +1137,6 @@ class myParseTreeVisitor(java8Visitor):
 				tac.append(True, None, temp, '=')
 			else :
 				tac.append(False, None, temp, '=')
-			#TODO: ISME TRUE_LIST AUR FALSE_LIST WALA KAAM KRO. In general, boolean literals/variables/expressions jaha bhi hain waha check krlo.
 			return {'type': {'base': 'boolean', 'dims': 0},'name': 'temp', 'true_list': [], 'false_list': []}
 		elif childType == java8Lexer.StringLiteral:
 			str_idx = symTable.addStringConstant(text)
