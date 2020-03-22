@@ -18,7 +18,10 @@ public class SimpleProgram {
 		a = (a<<1) * (b+2*(a));
 		funct1("Hello World!");
 		int y = func2(a)[0];
-		int[][] a = new int[21][45];
+		int[][] ac = new int[21][45];
+		for(int i=0; i<10; i++){
+			for(int j=0; j<10; j++) ac[i][j] = i*j + 1;
+		}
 		return;
 		// a/=c;
 		// c=a+b*c-d;
