@@ -566,16 +566,17 @@ class myParseTreeVisitor(java8Visitor):
 				localVariableInfo['type']['base'] = vdType['base']
 				localVariableInfo['type']['dims'] = vdType['dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
-				vdList = self.visitVariableDeclaratorList(child)
-				for var in vdList:
-					varIdentifier = var['identifier']
-					varInfo = localVariableInfo.copy()
-					# Both C-type and Java type dimensions supported
-					varInfo['type']['dims'] += var['dims']
-					symTable.addSymbol('variables',varIdentifier,varInfo)
-					if 'value' in var:
-						self.__typecheck__(var['value']['type'],localVariableInfo['type'])
-						tac.append(var['value']['name'],None,varIdentifier,'=')
+				for i in range(0,child.getChildCount()):
+					if(isinstance(child.getChild(i),self.parser.VariableDeclaratorContext)):
+						var = self.visitVariableDeclarator(child.getChild(i))
+						varIdentifier = var['identifier']
+						varInfo = localVariableInfo.copy()
+						varInfo['type']['dims'] += var['dims']
+						# varInfo['value'] = var['value']
+						symTable.addSymbol('variables',varIdentifier,varInfo)
+						if 'value' in var:
+							self.__typecheck__(var['value']['type'],localVariableInfo['type'])
+							tac.append(var['value']['name'],None,varIdentifier,'=')
 		#TODO:to be done while implementing typecasting. check and cast types appropriately.
 		return
 	
@@ -630,7 +631,7 @@ class myParseTreeVisitor(java8Visitor):
 			jump_idx = tac.append('','','',bool_reg_total)
 			allocInfo = self.__recursiveAlloc__(dims[1:],ptype)
 			tac.append(temp_reg,'64',temp_reg,'+')
-			tac.append(allocInfo['name'],'',temp_reg,'load')
+			tac.append(allocInfo['name'],'',temp_reg,'store')
 			tac.append('','',jump_label,'goto')
 			tac.backpatch([jump_idx],tac.genLabel())
 			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']+len(dims)}}
@@ -700,7 +701,6 @@ class myParseTreeVisitor(java8Visitor):
 		if (ctx.getChildCount() == 3):
 			variable_declarator["value"] = self.visitVariableInitializer(ctx.getChild(2)) #TODO: Check if int a=2, b=a*a; works.
 		return variable_declarator
-			
 
 	def visitVariableDeclaratorList(self,ctx:java8Parser.VariableDeclaratorListContext):
 		'''
@@ -800,13 +800,17 @@ class myParseTreeVisitor(java8Visitor):
 				fieldInfo['type']['dims'] = fType['dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
 				#If the reduction is already to a block need not change scope
-				fieldIdentifiers = self.visitVariableDeclaratorList(child)
-				for var in fieldIdentifiers:
-					varIdentifier = var['identifier']
-					varInfo = fieldInfo.copy()
-					varInfo['type']['dims'] = var['dims']
-					# varInfo['value'] = var['value']
-					symTable.addSymbol('variables',varIdentifier,varInfo)
+				for i in range(0,child.getChildCount()):
+					if(isinstance(child.getChild(i),self.parser.VariableDeclaratorContext)):
+						var = self.visitVariableDeclarator(child.getChild(i))
+						varIdentifier = var['identifier']
+						varInfo = fieldInfo.copy()
+						varInfo['type']['dims'] += var['dims']
+						# varInfo['value'] = var['value']
+						symTable.addSymbol('variables',varIdentifier,varInfo)
+						if 'value' in var:
+							self.__typecheck__(var['value']['type'],varInfo['type'])
+							tac.append(var['value']['name'],None,varIdentifier,'=')
 		return
 
 	# Visit a parse tree produced by java8Parser#unaryExpression.
