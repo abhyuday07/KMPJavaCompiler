@@ -17,37 +17,48 @@ else:
 import json
 from graphviz import Digraph
 global tac
+'''
+tac : All functionalities of Three Address Code
+symTable: All functionalities of Symbol Tab;e
+'''
 tac = ThreeAddressCode()
-# njp = java8Parser()
-# This class defines a complete generic visitor for a parse tree produced by java8Parser.
-'''
-['EMPTY', 'EOF', '__class__', '__delattr__', '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__',
- '__getattribute__', '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__', 
- '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', 
- '__subclasshook__', '__weakref__', 'accept', 'addChild', 'addErrorNode', 'addTokenNode', 'children', 'copyFrom',
-  'depth', 'enterRule', 'exception', 'exitRule', 'getAltNumber', 'getChild', 'getChildCount', 'getChildren', 
-  'getPayload', 'getRuleContext', 'getRuleIndex', 'getSourceInterval', 'getText', 'getToken', 'getTokens', 
-  'getTypedRuleContext', 'getTypedRuleContexts', 'importDeclaration', 'invokingState', 'isEmpty', 'packageDeclaration', 
-  'parentCtx', 'parser', 'removeLastChild', 'setAltNumber', 'start', 'stop', 'toString', 'toStringTree', 'typeDeclaration']
-'''
 
 class myParseTreeVisitor(java8Visitor):
-	# Visit a parse tree produced by java8Parser#literal.
+	# Initalization
 	def __init__(self,parser,lexer,tree):
 		super().__init__()
+		# Parser and lexer from which tree is generated
 		self.parser = parser
 		self.lexer = lexer
+		# ExceptionHandler for efficient generation of errors
 		self.exceptionHandler = exceptionHandler()
+		'''
+		In Java, the methods/classes can be invoked before declaration.
+		Hence, a single pass is not sufficient to generate the three address code.
+		In first pass, all class/methods are declared with the scopes.
+		In the second pass, everything else is done.
+		'''
 		fpTreeVisitor = firstPassTreeVisitor(parser,lexer,symTable)
 		fpTreeVisitor.visit(tree)
 	
 	def __isIdentifier__(self,ctx):
+		'''
+		input : ctx
+		output : if ctx is Identifier
+					return True
+				 else
+				 	return False
+		'''
 		if(isinstance(ctx, tree.Tree.TerminalNode) and ctx.getSymbol().type == java8Lexer.Identifier):
 			return True
 		else:
 			return False
 
 	def __getSize__(self,ttype):
+		'''
+		input : {'base': int/boolean/byte/etc.,'dims':0/1/2.}
+		output : memory reqd for ttype
+		'''
 		if(ttype.get('dims')>0):
 			return 8
 		elif(ttype.get('base') == 'boolean'):
@@ -88,7 +99,7 @@ class myParseTreeVisitor(java8Visitor):
 			return children
 	def __visitChildren__(self, ctx):
 		'''
-		Visits all children and returns the results in a list.
+		Visits all children and returns the result aaggregated in a list.
 		'''
 		result = []
 		for child in self.__getChildren__(ctx):
@@ -106,12 +117,19 @@ class myParseTreeVisitor(java8Visitor):
 			return None
 
 	def __errorHandler__(self, ctx,err,e=0):
+		'''
+		Send The message and ctx 
+		(ctx is reqd for output line number)
+		'''
 		self.exceptionHandler.raiseException(ctx,err,e)
 		raise Exception(err)
 		return
 	def __handleShortCircuit__(self,exprInfo):
-		# No handle short circuit just append this snippet
 		'''
+		input : exprInfo a.k.a return of visitExpression
+		output : Nothing
+		Generates theree address code for short circuit
+		Pseudo Code:
 						[expr_code]
 						goto next_label
 		true_label : 	temp = True
@@ -153,6 +171,7 @@ class myParseTreeVisitor(java8Visitor):
 		stmt_label = None
 		next_label = None
 		'''
+		Pseudo code:
 		expr_label : [code for expr]
 		if(expr) goto stmt_label
 		goto next_label
@@ -184,6 +203,7 @@ class myParseTreeVisitor(java8Visitor):
 		symTable.invokeScope(ctx)
 		children = self.__getChildren__(ctx)
 		'''
+		Pseudo code:
 		stmt_label : [code for stmt]
 		expr_label : [code for expr]
 		next_label
@@ -227,6 +247,7 @@ class myParseTreeVisitor(java8Visitor):
 				update_index = i
 
 		'''
+		Pseudo code:
 		[code for init]
 		expr_label : [code for expr]
 		if(expr) goto stmt_label
@@ -320,8 +341,10 @@ class myParseTreeVisitor(java8Visitor):
 		return
 
 	def visitBreakStatement(self,ctx:java8Parser.BreakStatementContext):
+		# returns index of Break Statement in TAC
 		return tac.append('','','','goto')
 	def visitContinueStatement(self,ctx:java8Parser.ContinueStatementContext):
+		# returns index of Continue Statement in TAC
 		return tac.append('','','','goto')
 	def visitStatement(self,ctx:java8Parser.StatementContext):
 		return self.__handleStatement__(ctx)
@@ -331,7 +354,9 @@ class myParseTreeVisitor(java8Visitor):
 		return self.__handleStatement__(ctx)
 
 	def visitNormalclassDeclaration(self, ctx:java8Parser.NormalclassDeclarationContext):
-		# normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
+		'''
+		normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
+		'''
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ModifierContext)):
@@ -344,7 +369,9 @@ class myParseTreeVisitor(java8Visitor):
 				symTable.closeCurrScope()
 		return
 	def visitMethodDeclaration(self, ctx:java8Parser.MethodDeclarationContext):
-		# methodDeclaration : modifier* methodHeader methodBody
+		'''
+		 methodDeclaration : modifier* methodHeader methodBody
+		'''
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ModifierContext)):
@@ -368,6 +395,7 @@ class myParseTreeVisitor(java8Visitor):
 			blockInfo = self.visitBlockStatements(children[1])
 		symTable.closeCurrScope()
 		return blockInfo
+
 	def visitBlockStatements(self,ctx:java8Parser.BlockStatementsContext):
 		'''
 		blockStatements : blockStatement blockStatement*
@@ -468,6 +496,7 @@ class myParseTreeVisitor(java8Visitor):
 		tac.backpatch(exprInfo['false_list'],switch_label)
 		end_idx = tac.append('','','','goto')
 		'''
+		Pseudo code:
 		[code for expr]
 		switch_label : goto end_label
 		label_1 : [code for blockStatement1]
@@ -1377,11 +1406,7 @@ class myParseTreeVisitor(java8Visitor):
 		p = self.__visitChildren__(ctx)
 		n_dims = (len(p))//4
 		# The first child will return a 'name' storing the 'address' of the first level array.
-		# Note: While declaring arrays we will have to assign values up till n-1 dimensions of the array.
 		# Confirm all expressions are ints.
-		# return
-		# print(p[0],p[1],p[2])
-		# print(n_dims,p[0]['type']['dims'])
 		if p[0]['type']['dims'] < n_dims: # Not strict inequality as we may want to access array to a certain depth only.
 			self.__errorHandler__(ctx, ctx.getChild(0).getText() + " must be an array/pointer.")
 		for i in range(n_dims):
@@ -1401,8 +1426,7 @@ class myParseTreeVisitor(java8Visitor):
 			if i < n_dims-1:
 				value = symTable.getTemporary()
 				tac.append(addr, None, value, 'load') #load the value at addr and assign to variable 'value'.
-				base = value	
-		# print(ctx.getText(),p[0],n_dims)		
+				base = value
 		return {'name': addr, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims}}
 
 	def visitMethodInvocation(self, ctx: java8Parser.MethodInvocationContext):
