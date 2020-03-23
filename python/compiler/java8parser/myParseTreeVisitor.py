@@ -1181,6 +1181,30 @@ class myParseTreeVisitor(java8Visitor):
 				args.append(exprInfo)
 		return args
 
+	def __handleRuntime(self):
+		# generate x86 binary using tac
+		# ensure that tac is self-sufficient and during runtime code generation
+		# you don't use any structures other than tac
+		for instr in tac.code:
+			op1, op2, dest, operator = instr
+			# handling function call
+			if (operator == ":param:"):
+				# a function call must be starting
+				print("push " + op1)
+			elif (operator == "function"):
+				# transfer control to the callee
+				print("call " + op1)
+			# elif (operator == "method declaration"):
+				# print("op1: push ebp")
+				# print("mov ebp, esp")
+				# allocate stack space for local variables
+				# print("sub esp size")
+				# access first parameter to the function
+				# print("mov ebx [ebp+8]")
+				# access second parameter to the function
+				# print("mov ebx [ebp+12]")
+
+
 	def __handleMethods__(self,ctx):
 		'''
 		methodInvocation:	methodName '(' argumentList? ')'
@@ -1207,9 +1231,23 @@ class myParseTreeVisitor(java8Visitor):
 			for i in range(0,len(argProvided)):
 				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
 					self.__errorHandler__(ctx,"Type of arguments mismatch")
-				else:
-					tac.append(argProvided[i]['name'],'',':param'+str(i)+':','=')
+			# need to traverse the list of children because C calling convention
+			# pushes the arguments to the callee onto the stack of callee
+			# the arguments must be put in the stack in the reverse order
+			argSize = 0
+			for arg in reversed(argProvided):
+				# op1 is the temporary containing the argument
+				# op2 of the tac is the size of the type of argument
+				# op2 will be needed for updating the stack pointer
+				tac.append(arg['name'],'',':param:','=')
+				argSize += self.__getSize__(arg['type'])
+				# for this 3AC, the caller should push this argument onto the stack
 			tac.append('','',symbol,'function')
+			# note that the instruction "call" automatically puts the return address on the new stack
+			# after control returns to the caller on the next instruction, it must pop the arg_size
+			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp
+			# by the required amount
+			tac.append(argSize,'','','pop')
 
 		elif(isinstance(children[0],self.parser.NameContext)):
 			# name '.' typeArguments? Identifier '(' argumentList? ')'
