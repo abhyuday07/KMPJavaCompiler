@@ -243,9 +243,11 @@ class firstPassTreeVisitor(java8Visitor):
 		return self.visitChildren(ctx)
 	
 	def visitUnannClassOrInterfaceType(self, ctx:java8Parser.UnannClassOrInterfaceTypeContext):
+		# class reference types are not handled at the moment
 		return {"base": ctx.getText(), "dims":0}
 
 	def visitUnanntypeVariable(self, ctx:java8Parser.UnanntypeVariableContext):
+		# don't know what this represents, not handled yet
 		return {"base": ctx.getText(), "dims":0}
 
 	def visitDims(self, ctx:java8Parser.DimsContext):

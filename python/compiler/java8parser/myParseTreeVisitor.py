@@ -809,13 +809,22 @@ class myParseTreeVisitor(java8Visitor):
 				fieldInfo['type']['base'] = fType['base']
 				fieldInfo['type']['dims'] = fType['dims']
 			elif(isinstance(child,self.parser.VariableDeclaratorListContext)):
-				#If the reduction is already to a block need not change scope
+				# If the reduction is already to a block need not change scope
+				# for each variable, declarator, decide the appropriate offset
 				for i in range(0,child.getChildCount()):
 					if(isinstance(child.getChild(i),self.parser.VariableDeclaratorContext)):
 						var = self.visitVariableDeclarator(child.getChild(i))
 						varIdentifier = var['identifier']
 						varInfo = fieldInfo.copy()
 						varInfo['type']['dims'] += var['dims']
+						varInfo['offset'] = symTable.offset
+						if (varInfo['type']['dims'] == 0):
+							# this is a primitive type hence get the size using __getSize__
+							symTable.offset += self.__getSize__(varInfo['type']['base'])
+						else:
+							# this is a reference type, hence only allocate the pointer on the stack
+							# assume that the size of pointer/reference type is 4 bytes
+							symTable.offset += 4
 						# varInfo['value'] = var['value']
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
