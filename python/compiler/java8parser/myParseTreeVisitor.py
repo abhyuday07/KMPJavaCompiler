@@ -1211,7 +1211,7 @@ class myParseTreeVisitor(java8Visitor):
 		return args
 
 	def __handleRuntime(self):
-		# generate x86 binary using tac
+		# generate assembly code for NASM using tac
 		# ensure that tac is self-sufficient and during runtime code generation
 		# you don't use any structures other than tac
 		for instr in tac.code:
@@ -1273,9 +1273,8 @@ class myParseTreeVisitor(java8Visitor):
 				# for this 3AC, the caller should push this argument onto the stack
 			tac.append('','',symbol,'function')
 			# note that the instruction "call" automatically puts the return address on the new stack
-			# after control returns to the caller on the next instruction, it must pop the arg_size
-			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp
-			# by the required amount
+			# after control returns to the caller on the next instruction, it must pop the arguments
+			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp by arg_size
 			tac.append(argSize,'','','pop')
 
 		elif(isinstance(children[0],self.parser.NameContext)):
