@@ -97,3 +97,104 @@ class ackermann{
         printInt(i);
     }
 }
+
+public class MyBinarySearch {
+    int printInt(int n);
+
+    public int binarySearch(int inputArr[], int len, int key) {
+        int start = 0,mid;
+        int end = len - 1;
+        while (start <= end) {
+            mid = (start + end) / 2;
+            if (key == inputArr[mid]) {
+                return mid;
+            }
+            if (key < inputArr[mid]) {
+                end = mid - 1;
+            } else {
+                start = mid + 1;
+            }
+        }
+        return -1;
+    }
+    public static void main() {
+        int arr[] = new int[8];
+        arr[0] = 2;
+        arr[1] = 4;
+        arr[2] = 6;
+        arr[3] = 8;
+        arr[4] = 10;
+        arr[5] = 12;
+        arr[6] = 14;
+        arr[7] = 16;
+        printInt(binarySearch(arr, 8, 14));
+
+        int arr1[] = new int[6];
+        arr1[0] = 6;
+        arr1[1] = 34;
+        arr1[2] = 78;
+        arr1[3] = 123;
+        arr1[4] = 432;
+        arr1[5] = 900;
+        printInt(binarySearch(arr1, 6, 431));
+    }
+}
+
+class bubblesort {
+    int printInt(int n);
+
+    int sort(int arr[], int len) {
+        int n = len;
+        int temp, i, j;
+        for(i=0; i < n; i++){
+            for(j=1; j < (n-i); j++){
+                if(arr[j-1] > arr[j]){
+                    temp = arr[j-1];
+                    arr[j-1] = arr[j];
+                    arr[j] = temp;
+                }
+            }
+        }
+        return 0;
+    }
+	public static void main() {
+                int arr[] = new int[7];
+                arr[0] = 7;
+                arr[1] = 6;
+                arr[2] = 5;
+                arr[3] = 4;
+                arr[4] = 3;
+                arr[5] = 2;
+                arr[6] = 1;
+                sort(arr, 7);
+                //sort(arr, 'a');//sorting array elements using bubble sort
+                for(int i=0; i < 7; i++){
+                        printInt(arr[i]);
+                }
+
+        }
+}
+ 
+class fileio{
+    int scanString();
+    int fcreate(int f);
+    int fopen(int f);
+    int fwrite(int f, int m);
+    int fclose(int f);
+    int fread(int f, int len);
+
+    public static void main(){
+      int file_name = scanString();
+
+      int fd_out = fcreate(file_name);
+
+      int msg = scanString();
+
+      fwrite(fd_out, msg);
+
+      fclose(fd_out);
+
+      int fd_in = fopen(file_name);
+
+      fread(fd_in, 5);
+}}

@@ -584,6 +584,7 @@ class myParseTreeVisitor(java8Visitor):
 						# varInfo['value'] = var['value']
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
+							print(var,localVariableInfo)
 							self.__typecheck__(var['value']['type'],localVariableInfo['type'])
 							tac.append(var['value']['name'],None,varIdentifier,'=')
 		#TODO:to be done while implementing typecasting. check and cast types appropriately.
@@ -1262,8 +1263,8 @@ class myParseTreeVisitor(java8Visitor):
 			return {'name': lhs['name'], 'type': lhs['type'],'true_list': 
 					true_idx + lhs['true_list'] + rhs['true_list'],
 					'false_list': false_idx + lhs['false_list']+rhs['false_list']}
-
-		if commonType['dims'] != 0:
+		# print(p[0],p[2])
+		if commonType is None or commonType['dims'] != 0:
 			self.__errorHandler__(ctx, op + " not defined for pointers")
 		elif op in ['^', '|', '&']: # Bitwise ops
 			if commonType['base'] not in ['int', 'boolean', 'long']:
@@ -1312,7 +1313,7 @@ class myParseTreeVisitor(java8Visitor):
 		lastPointer = self.__arrayAccessLastPointer__(ctx)
 		temp = symTable.getTemporary()
 		tac.append(lastPointer['name'], None, temp, 'load')
-		return {'name': temp, 'type': {'base' : lastPointer['type']['base'] , 'dims': lastPointer['type']['dims']-1}}
+		return {'name': temp, 'type': {'base' : lastPointer['type']['base'] , 'dims': lastPointer['type']['dims']}}
 
 	def __arrayAccessLastPointer__(self, ctx):
 		# returns the pointer to the array element being accessed.
@@ -1353,7 +1354,8 @@ class myParseTreeVisitor(java8Visitor):
 			if i < n_dims-1:
 				value = symTable.getTemporary()
 				tac.append(addr, None, value, 'load') #load the value at addr and assign to variable 'value'.
-				base = value			
+				base = value	
+		# print(ctx.getText(),p[0],n_dims)		
 		return {'name': addr, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims}}
 
 	def visitMethodInvocation(self, ctx: java8Parser.MethodInvocationContext):
