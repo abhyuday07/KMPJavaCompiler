@@ -581,6 +581,10 @@ class myParseTreeVisitor(java8Visitor):
 						varIdentifier = var['identifier']
 						varInfo = localVariableInfo.copy()
 						varInfo['type']['dims'] += var['dims']
+						varInfo['offset'] = symTable.offset
+						# either this is a primitive type hence get the size using __getSize__
+						# or this is a reference type, hence only allocate the pointer on the stack
+						symTable.offset += self.__getSize__(varInfo['type'])
 						# varInfo['value'] = var['value']
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
@@ -818,13 +822,9 @@ class myParseTreeVisitor(java8Visitor):
 						varInfo = fieldInfo.copy()
 						varInfo['type']['dims'] += var['dims']
 						varInfo['offset'] = symTable.offset
-						if (varInfo['type']['dims'] == 0):
-							# this is a primitive type hence get the size using __getSize__
-							symTable.offset += self.__getSize__(varInfo['type']['base'])
-						else:
-							# this is a reference type, hence only allocate the pointer on the stack
-							# assume that the size of pointer/reference type is 4 bytes
-							symTable.offset += 4
+						# either this is a primitive type hence get the size using __getSize__
+						# or this is a reference type, hence only allocate the pointer on the stack
+						symTable.offset += self.__getSize__(varInfo['type']['base'])
 						# varInfo['value'] = var['value']
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
