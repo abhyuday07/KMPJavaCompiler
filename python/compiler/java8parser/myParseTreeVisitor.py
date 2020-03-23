@@ -415,7 +415,7 @@ class myParseTreeVisitor(java8Visitor):
 		stmtInfo2 = self.visitStatement(p[6])
 		symTable.closeCurrScope()
 		return {'break_list':stmtInfo1['break_list']+stmtInfo1['break_list'],
-				'continue_list':stmtInfo2['continue_list' + stmtInfo2['continue_list']]}
+				'continue_list':stmtInfo2['continue_list'] + stmtInfo2['continue_list']}
 				
 	def visitIfThenElseStatementNoShortIf(self, ctx:java8Parser.IfThenElseStatementNoShortIfContext):
 		'''
@@ -437,7 +437,7 @@ class myParseTreeVisitor(java8Visitor):
 		stmtInfo2 = self.visitStatementNoShortIf(p[6])
 		symTable.closeCurrScope()
 		return {'break_list':stmtInfo1['break_list']+stmtInfo1['break_list'],
-				'continue_list':stmtInfo2['continue_list' + stmtInfo2['continue_list']]}
+				'continue_list':stmtInfo2['continue_list'] + stmtInfo2['continue_list']}
 	def visitSwitchStatement(self, ctx:java8Parser.SwitchStatementContext):
 		'''
 		switchStatement : SWITCH '(' expression ')' switchBlock
@@ -1165,6 +1165,17 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		# Similar to array access primary. Just returns the last level pointer instead of assigning it to a temporary.
 		return self.__arrayAccessLastPointer__(ctx)
+	def visitArgumentList(self,ctx:java8Parser.ArgumentListContext):
+		'''
+		argumentList:	expression (',' expression)*
+		;
+		'''
+		args = []
+		children = self.__getChildren__(ctx)
+		for child in children:
+			if(isinstance(child,self.parser.ExpressionContext)):
+				args.append(self.visitExpression(child))
+		return args
 
 	def __handleMethods__(self,ctx):
 		'''
@@ -1184,7 +1195,7 @@ class myParseTreeVisitor(java8Visitor):
 			argProvided = []
 			for child in children:
 				if(isinstance(child,self.parser.ArgumentListContext)):
-					argProvided = self.__visitChildren__(child)
+					argProvided = self.visitArgumentList(child)
 			if(len(methodInfo['parameters']) != len(argProvided)):
 				self.__errorHandler__(ctx,"Number of arguments mismatch")
 			expParams = list(methodInfo['parameters'].keys())
@@ -1212,7 +1223,7 @@ class myParseTreeVisitor(java8Visitor):
 			argProvided = []
 			for child in children:
 				if(isinstance(child,self.parser.ArgumentListContext)):
-					argProvided = self.__visitChildren__(child)
+					argProvided = self.visitArgumentList(child)
 			if(len(methodInfo['parameters']) != len(argProvided)):
 				self.__errorHandler__(ctx,"Number of arguments mismatch")
 			expParams = list(methodInfo['parameters'].keys())
@@ -1272,7 +1283,7 @@ class myParseTreeVisitor(java8Visitor):
 			temp = symTable.getTemporary()
 			tac.append(p[0]['name'], p[2]['name'], temp, op)
 			# idx = tac.append('','','',temp)
-			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
+			return {'name':temp, 'type': {'base':'boolean','dims':0}, 'true_list': [], 'false_list':[]}
 		elif op == 'instanceof':
 			#TODO: check symbol table and inheritance hierarchy and return value here itself.
 			pass
