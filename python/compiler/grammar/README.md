@@ -36,3 +36,6 @@ java8.g4 has the following changes from java8_v2.g4
 The following non-Terminals are renamed by a common non-Terminal modifier
 * constructionModifier
 * interfaceMethodModifier
+
+Update
+Removed annotations and commented some unsupported features

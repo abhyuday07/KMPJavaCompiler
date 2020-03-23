@@ -23,8 +23,8 @@ type_   : primitivetype
         | referencetype
         ;
 
-primitivetype: annotation* numerictype
-        | annotation* BOOLEAN
+primitivetype:  numerictype
+        | BOOLEAN
         ;
 
 numerictype: integraltype
@@ -56,14 +56,14 @@ classOrInterfaceType: (classType__2__classOrInterfaceType
 		)*
 	    ;
 
-classtype: annotation* Identifier typeArguments?
-        | classOrInterfaceType '.' annotation* Identifier typeArguments?
+classtype:  Identifier typeArguments?
+        | classOrInterfaceType '.'  Identifier typeArguments?
         ;
 
-classType__1__classOrInterfaceType:	'.' annotation* Identifier typeArguments?
+classType__1__classOrInterfaceType:	'.'  Identifier typeArguments?
     	;
 
-classType__2__classOrInterfaceType: annotation* Identifier typeArguments?
+classType__2__classOrInterfaceType:  Identifier typeArguments?
 	;
 
 interfacetype: classtype
@@ -77,7 +77,7 @@ interfaceType__2__classOrInterfaceType
 	:	classType__2__classOrInterfaceType
 	;
 
-typeVariable: annotation* Identifier
+typeVariable:  Identifier
         ;
 
 arraytype: primitivetype dims
@@ -85,14 +85,14 @@ arraytype: primitivetype dims
         | typeVariable dims
         ;
 
-dims: annotation* '[' ']' (annotation* '[' ']')*
+dims:  '[' ']' ( '[' ']')*
         ;
 
-typeParameter: typeParameterModifier* Identifier typeBound?
+typeParameter: Identifier typeBound?
         ;
 
-typeParameterModifier: annotation
-        ;
+// typeParameterModifier: annotation
+//        ;
 
 typeBound: EXTENDS typeVariable
         | EXTENDS classOrInterfaceType additionalBound*
@@ -111,7 +111,7 @@ typeArgument: referencetype
         | wildcard
         ;
 
-wildcard: annotation* '?' wildcardBounds?
+wildcard: '?' wildcardBounds?
         ;
 
 wildcardBounds: EXTENDS referencetype
@@ -136,11 +136,11 @@ methodName : Identifier
 compilationUnit: packageDeclaration? importDeclaration* typeDeclaration*  EOF
         ;
 
-packageDeclaration: packageModifier* PACKAGE Identifier ('.' Identifier)* ';'
+packageDeclaration: PACKAGE Identifier ('.' Identifier)* ';'
         ;
 
-packageModifier: annotation
-        ;
+// packageModifier: annotation
+//       ;
 
 importDeclaration: singletypeImportDeclaration
         | typeImportOnDemandDeclaration
@@ -174,8 +174,7 @@ classDeclaration : normalclassDeclaration
 		;
 normalclassDeclaration : modifier* CLASS Identifier typeParameters? superclass? superinterfaces? classBody
 		;
-modifier : annotation
-		|	PUBLIC
+modifier : 	PUBLIC
 		|	PROTECTED
 		|	PRIVATE
 		|	ABSTRACT
@@ -241,10 +240,10 @@ unannClassOrInterfaceType:	(	unannClassType__2__unannClassOrInterfaceType
 	    ;
 
 unannClassType:	Identifier typeArguments?
-        |	unannClassOrInterfaceType '.' annotation* Identifier typeArguments?
+        |	unannClassOrInterfaceType '.' Identifier typeArguments?
         ;
 
-unannClassType__1__unannClassOrInterfaceType: '.' annotation* Identifier typeArguments?
+unannClassType__1__unannClassOrInterfaceType: '.' Identifier typeArguments?
 	    ;
 
 unannClassType__2__unannClassOrInterfaceType: Identifier typeArguments?
@@ -269,7 +268,7 @@ unannArraytype : unannPrimitiveType dims
 methodDeclaration : modifier* methodHeader methodBody
 		;
 methodHeader : result methodDeclarator throws_?
-		|	typeParameters annotation* result methodDeclarator throws_?
+		|	typeParameters result methodDeclarator throws_?
 		;
 result : unanntype
 		|	VOID
@@ -285,13 +284,12 @@ formalParameters : formalParameter (',' formalParameter)*
 		;
 formalParameter : variableModifier* unanntype variableDeclaratorId
 		;
-variableModifier : annotation
-		| FINAL
+variableModifier :  FINAL
 		;
-lastFormalParameter : variableModifier* unanntype annotation* '...' variableDeclaratorId
+lastFormalParameter : variableModifier* unanntype '...' variableDeclaratorId
 		|	formalParameter
 		;
-receiverParameter : annotation* unanntype (Identifier '.') THIS
+receiverParameter : unanntype (Identifier '.') THIS
 		;
 throws_ : THROWS exceptiontypeList
 		;
@@ -347,8 +345,7 @@ interfaceMemberDeclaration: constantDeclaration
 constantDeclaration: constantModifier* unanntype variableDeclaratorList ';'
         ;
 
-constantModifier: annotation
-        | PUBLIC
+constantModifier:  PUBLIC
         | STATIC
         | FINAL
         ;
@@ -359,23 +356,22 @@ interfaceMethodDeclaration: modifier* methodHeader methodBody
 defaultValue: DEFAULT elementValue
         ;
 
-annotation: normalAnnotation
-        | markerAnnotation
-        | singleElementAnnotation
-        ;
+// annotation: normalAnnotation
+//        | markerAnnotation
+//        | singleElementAnnotation
+//        ;
 
-normalAnnotation: '@' name '(' elementValuePairList? ')'
-        ;
+// normalAnnotation: '@' name '(' elementValuePairList? ')'
+//        ;
 
-elementValuePairList: elementValuePair (',' elementValuePair)*
-        ;
+// elementValuePairList: elementValuePair (',' elementValuePair)*
+//        ;
 
-elementValuePair: Identifier '=' elementValue
-        ;
+// elementValuePair: Identifier '=' elementValue
+//        ;
 
 elementValue: conditionalExpression
         | elementValueArrayInitializer
-        | annotation
         ;
 
 elementValueArrayInitializer: '{' elementValueList? '.'? '}'
@@ -384,11 +380,11 @@ elementValueArrayInitializer: '{' elementValueList? '.'? '}'
 elementValueList: elementValue (',' elementValue)*
         ;
 
-markerAnnotation: '@' name
-        ;
+// markerAnnotation: '@' name
+//        ;
 
-singleElementAnnotation: '@' name '(' elementValue ')'
-        ;
+// singleElementAnnotation: '@' name '(' elementValue ')'
+//        ;
 
 
 
@@ -620,16 +616,16 @@ primaryNoNewArray__2__primary__2__arrayAccess__2__primary:	literal
     	|	methodInvocation__2__primary
     	;
 
-classInstanceCreationExpression: NEW typeArguments? annotation* Identifier ('.' annotation* Identifier)* typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
-    	|	name '.' NEW typeArguments? annotation* Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
-    	|	primary '.' NEW typeArguments? annotation* Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
+classInstanceCreationExpression: NEW typeArguments? Identifier ('.' Identifier)* typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
+    	|	name '.' NEW typeArguments? Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
+    	|	primary '.' NEW typeArguments? Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
     	;
 
-classInstanceCreationExpression__1__primary:	'.' NEW typeArguments? annotation* Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
+classInstanceCreationExpression__1__primary:	'.' NEW typeArguments? Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
     	;
 
-classInstanceCreationExpression__2__primary:	NEW typeArguments? annotation* Identifier ('.' annotation* Identifier)* typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
-    	|	name '.' NEW typeArguments? annotation* Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
+classInstanceCreationExpression__2__primary:	NEW typeArguments? Identifier ('.' Identifier)* typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
+    	|	name '.' NEW typeArguments? Identifier typeArgumentsOrDiamond? '(' argumentList? ')' classBody?
 	    ;
 
 typeArgumentsOrDiamond:	typeArguments
@@ -670,10 +666,10 @@ arrayAccess__2__primary: (	name '[' expression ']'
 
 methodInvocation:	methodName '(' argumentList? ')'
 	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
+	    // |	name '.' typeArguments? Identifier '(' argumentList? ')'
 	    |	primary '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	SUPER '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+	    // |	SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+	    // |	name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
 	    ;
 
 methodInvocation__1__primary: '.' typeArguments? Identifier '(' argumentList? ')'
@@ -681,9 +677,9 @@ methodInvocation__1__primary: '.' typeArguments? Identifier '(' argumentList? ')
 
 methodInvocation__2__primary:	methodName '(' argumentList? ')'
 	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	name '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	SUPER '.' typeArguments? Identifier '(' argumentList? ')'
-	    |	name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+	    // |	name '.' typeArguments? Identifier '(' argumentList? ')'
+	    // |	SUPER '.' typeArguments? Identifier '(' argumentList? ')'
+	    // |	name '.' SUPER '.' typeArguments? Identifier '(' argumentList? ')'
 	    ;
 
 argumentList:	expression (',' expression)*
@@ -698,7 +694,7 @@ arrayCreationExpression : NEW primitivetype dimExprs dims?
 dimExprs : dimExpr dimExpr*
         ;
 
-dimExpr : annotation* '[' expression ']'
+dimExpr :  '[' expression ']'
         ;
 
 expression : assignmentExpression

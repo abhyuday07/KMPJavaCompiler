@@ -99,11 +99,6 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#typeParameterModifier.
-    def visitTypeParameterModifier(self, ctx:java8Parser.TypeParameterModifierContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#typeBound.
     def visitTypeBound(self, ctx:java8Parser.TypeBoundContext):
         return self.visitChildren(ctx)
@@ -156,11 +151,6 @@ class java8Visitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by java8Parser#packageDeclaration.
     def visitPackageDeclaration(self, ctx:java8Parser.PackageDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#packageModifier.
-    def visitPackageModifier(self, ctx:java8Parser.PackageModifierContext):
         return self.visitChildren(ctx)
 
 
@@ -484,26 +474,6 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#annotation.
-    def visitAnnotation(self, ctx:java8Parser.AnnotationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#normalAnnotation.
-    def visitNormalAnnotation(self, ctx:java8Parser.NormalAnnotationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#elementValuePairList.
-    def visitElementValuePairList(self, ctx:java8Parser.ElementValuePairListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#elementValuePair.
-    def visitElementValuePair(self, ctx:java8Parser.ElementValuePairContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#elementValue.
     def visitElementValue(self, ctx:java8Parser.ElementValueContext):
         return self.visitChildren(ctx)
@@ -516,16 +486,6 @@ class java8Visitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by java8Parser#elementValueList.
     def visitElementValueList(self, ctx:java8Parser.ElementValueListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#markerAnnotation.
-    def visitMarkerAnnotation(self, ctx:java8Parser.MarkerAnnotationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#singleElementAnnotation.
-    def visitSingleElementAnnotation(self, ctx:java8Parser.SingleElementAnnotationContext):
         return self.visitChildren(ctx)
 
 
@@ -786,11 +746,6 @@ class java8Visitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by java8Parser#primary.
     def visitPrimary(self, ctx:java8Parser.PrimaryContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#primaryNoNewArray.
-    def visitPrimaryNoNewArray(self, ctx:java8Parser.PrimaryNoNewArrayContext):
         return self.visitChildren(ctx)
 
 
