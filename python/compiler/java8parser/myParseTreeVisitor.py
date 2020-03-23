@@ -109,6 +109,36 @@ class myParseTreeVisitor(java8Visitor):
 		self.exceptionHandler.raiseException(ctx,err,e)
 		raise Exception(err)
 		return
+	def __handleShortCircuit__(self,exprInfo):
+		# No handle short circuit just append this snippet
+		'''
+						[expr_code]
+						goto next_label
+		true_label : 	temp = True
+						goto next_label
+		false_label :	temp = False
+						goto next_label # Redundant but let it be
+		next_label :	
+		'''
+		if(exprInfo['type'] != {'base':'boolean','dims':0}):
+			return
+		if(len(exprInfo['continue_list']) + len(exprInfo['break_list']) == 0):
+			return
+		next_idx = []
+		next_idx.append(tac.append('','','','goto'))
+		if('true_list' in exprInfo and len(exprInfo['true_list']) > 0):
+			true_label = tac.genLabel()
+			tac.backpatch(exprInfo['true_list'],true_label)
+			tac.append('True','',exprInfo['name'],'=')
+			next_idx.append(tac.append('','','','goto'))
+		if('false_list' in exprInfo and len(exprInfo['false_list']) > 0):
+			false_label = tac.genLabel()
+			tac.backpatch(exprInfo['false_list'],false_label)
+			tac.append('False','',exprInfo['name'],'=')
+			next_idx.append(tac.append('','','','goto'))
+		next_label = tac.genLabel()
+		tac.backpatch(next_idx,next_label)
+		return
 
 	def __handleWhile__(self,ctx):
 		'''
@@ -282,20 +312,7 @@ class myParseTreeVisitor(java8Visitor):
 		children = self.__getChildren__(ctx)
 		if(len(children) == 3):
 			exprInfo = self.visitExpression(children[1])
-			next_idx = []
-			next_idx.append(tac.append('','','','goto'))
-			if('true_list' in exprInfo and len(exprInfo['true_list']) > 0):
-				true_label = tac.genLabel()
-				tac.backpatch(exprInfo['true_list'],true_label)
-				tac.append('True','',exprInfo['name'],'=')
-				next_idx.append(tac.append('','','','goto'))
-			if('false_list' in exprInfo and len(exprInfo['false_list']) > 0):
-				false_label = tac.genLabel()
-				tac.backpatch(exprInfo['false_list'],false_label)
-				tac.append('False','',exprInfo['name'],'=')
-				next_idx.append(tac.append('','','','goto'))
-			next_label = tac.genLabel()
-			tac.backpatch(next_idx,next_label)
+			self.__handleShortCircuit__(exprInfo)
 			tac.append(exprInfo['name'],'',':r:','=')
 			tac.append('','','','ret')
 		else:
@@ -945,32 +962,7 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 
 		p = self.__visitChildren__(ctx)
-		# No handle short circuit just append this snippet
-		'''
-						[expr_code]
-						goto next_label
-		true_label : 	temp = True
-						goto next_label
-		false_label :	temp = False
-						goto next_label # Redundant but let it be
-		next_label :	
-		'''
-		# SNIPPET START
-		next_idx = []
-		next_idx.append(tac.append('','','','goto'))
-		if('true_list' in p[2]  and len(p[2]['true_list']) > 0):
-			true_label = tac.genLabel()
-			tac.append('True','',p[2]['name'],'=')
-			tac.backpatch(p[2]['true_list'],true_label)
-			next_idx.append(tac.append('','','','goto'))
-		if('false_list' in p[2]  and len(p[2]['false_list']) > 0):
-			false_label = tac.genLabel()
-			tac.append('False','',p[2]['name'],'=')
-			tac.backpatch(p[2]['false_list'],false_label)
-			next_idx.append(tac.append('','','','goto'))
-		next_label = tac.genLabel()
-		tac.backpatch(next_idx,next_label)
-		# SNIPPET END
+		self.__handleShortCircuit__(p[2])
 		#TODO: How to handle field accesses. Now handled only 'name' and 'arrayAccess'.
 		if isinstance(ctx.getChild(0).getChild(0), self.parser.ArrayAccessContext):
 			commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
@@ -1174,7 +1166,9 @@ class myParseTreeVisitor(java8Visitor):
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ExpressionContext)):
-				args.append(self.visitExpression(child))
+				exprInfo = self.visitExpression(child)
+				self.__handleShortCircuit__(exprInfo)
+				args.append(exprInfo)
 		return args
 
 	def __handleMethods__(self,ctx):
