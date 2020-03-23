@@ -659,16 +659,6 @@ class java8Visitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by java8Parser#enhancedForStatement.
-    def visitEnhancedForStatement(self, ctx:java8Parser.EnhancedForStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by java8Parser#enhancedForStatementNoShortIf.
-    def visitEnhancedForStatementNoShortIf(self, ctx:java8Parser.EnhancedForStatementNoShortIfContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by java8Parser#breakStatement.
     def visitBreakStatement(self, ctx:java8Parser.BreakStatementContext):
         return self.visitChildren(ctx)

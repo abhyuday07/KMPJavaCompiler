@@ -482,10 +482,10 @@ whileStatementNoShortIf : WHILE '(' expression ')' statementNoShortIf
 doStatement : DO statement WHILE '(' expression ')' ';'
 		;
 forStatement : basicForStatement
-		|	enhancedForStatement
+		// |	enhancedForStatement
 		;
 forStatementNoShortIf : basicForStatementNoShortIf
-		|	enhancedForStatementNoShortIf
+		// |	enhancedForStatementNoShortIf
 		;
 basicForStatement : FOR '(' forInit? ';' expression? ';' forUpdate? ')' statement
 		;
@@ -498,10 +498,10 @@ forUpdate : statementExpressionList
 		;
 statementExpressionList : statementExpression (',' statementExpression)*
 		;
-enhancedForStatement : FOR '(' variableModifier* unanntype variableDeclaratorId ':' expression ')' statement
-		;
-enhancedForStatementNoShortIf : FOR '(' variableModifier* unanntype variableDeclaratorId ':' expression ')' statementNoShortIf
-		;
+//enhancedForStatement : FOR '(' variableModifier* unanntype variableDeclaratorId ':' expression ')' statement
+//		;
+// enhancedForStatementNoShortIf : FOR '(' variableModifier* unanntype variableDeclaratorId ':' expression ')' statementNoShortIf
+//		;
 breakStatement : BREAK Identifier? ';'
 		;
 continueStatement : CONTINUE Identifier? ';'
