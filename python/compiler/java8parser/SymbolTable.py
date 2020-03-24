@@ -23,6 +23,7 @@ class SymbolTable:
         self.scope_lookup = {}
         self.node_to_table = {}
         self.string_constants = []
+        self.temp_to_type = {}
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
@@ -100,8 +101,10 @@ class SymbolTable:
         return None
 
 
-    def getTemporary(self):
+    def getTemporary(self,ptype):
         self.tempCount += 1
+        self.temp_to_type[":t" + str(self.tempCount)+":"] = ptype
+        # Store the type of this variable
         return ":t" + str(self.tempCount)+":"
     
     def addStringConstant(self,string):
