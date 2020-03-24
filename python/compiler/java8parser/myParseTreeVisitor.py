@@ -1168,22 +1168,7 @@ class myParseTreeVisitor(java8Visitor):
 		elif childType == java8Lexer.StringLiteral:
 			temp = symTable.getTemporary({'base':'String', 'dims': 0})
 			str_idx = symTable.addStringConstant(text)
-			tac.append(':str'+str(str_idx)+':', None, temp, '=')# need to traverse the list of children because C calling convention
-			# pushes the arguments to the callee onto the stack of callee
-			# the arguments must be put in the stack in the reverse order
-			argSize = 0
-			for arg in reversed(argProvided):
-				# op1 is the temporary containing the argument
-				# op2 of the tac is the size of the type of argument
-				# op2 will be needed for updating the stack pointer
-				tac.append(arg['name'],'',':param:','=')
-				argSize += self.__getSize__(arg['type'])
-				# for this 3AC, the caller should push this argument onto the stack
-			tac.append('','',symbol,'function')
-			# note that the instruction "call" automatically puts the return address on the new stack
-			# after control returns to the caller on the next instruction, it must pop the arguments
-			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp by arg_size
-			tac.append(argSize,'','','pop')
+			tac.append(':str'+str(str_idx)+':', None, temp, '=')
 			return {'name' : temp, 'type': {'base':'String', 'dims': 0}}
 		self.__errorHandler__(ctx,"Only integer, float and boolean literals are supported.")
 	
