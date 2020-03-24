@@ -60,7 +60,7 @@ class myParseTreeVisitor(java8Visitor):
 		output : memory reqd for ttype
 		'''
 		if(ttype.get('dims')>0):
-			return 8
+			return 4
 		elif(ttype.get('base') == 'boolean'):
 			return 1
 		elif(ttype.get('base') == 'byte'):
@@ -649,7 +649,7 @@ class myParseTreeVisitor(java8Visitor):
 		# creates an array of ptype[dims[0]][dims[1]]...
 		if(len(dims) == 0):
 			size = self.__getSize__(ptype)
-			tac.append(str(size),'',':param1:','=')
+			tac.append(size,'',':param1:','=')
 			tac.append('','','malloc','function')
 			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']}}
 		elif(len(dims) == 1):
@@ -1168,7 +1168,22 @@ class myParseTreeVisitor(java8Visitor):
 		elif childType == java8Lexer.StringLiteral:
 			temp = symTable.getTemporary({'base':'String', 'dims': 0})
 			str_idx = symTable.addStringConstant(text)
-			tac.append(':str'+str(str_idx)+':', None, temp, '=')
+			tac.append(':str'+str(str_idx)+':', None, temp, '=')# need to traverse the list of children because C calling convention
+			# pushes the arguments to the callee onto the stack of callee
+			# the arguments must be put in the stack in the reverse order
+			argSize = 0
+			for arg in reversed(argProvided):
+				# op1 is the temporary containing the argument
+				# op2 of the tac is the size of the type of argument
+				# op2 will be needed for updating the stack pointer
+				tac.append(arg['name'],'',':param:','=')
+				argSize += self.__getSize__(arg['type'])
+				# for this 3AC, the caller should push this argument onto the stack
+			tac.append('','',symbol,'function')
+			# note that the instruction "call" automatically puts the return address on the new stack
+			# after control returns to the caller on the next instruction, it must pop the arguments
+			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp by arg_size
+			tac.append(argSize,'','','pop')
 			return {'name' : temp, 'type': {'base':'String', 'dims': 0}}
 		self.__errorHandler__(ctx,"Only integer, float and boolean literals are supported.")
 	
@@ -1305,9 +1320,22 @@ class myParseTreeVisitor(java8Visitor):
 			for i in range(0,len(argProvided)):
 				if(argProvided[i]['type']!=methodInfo['parameters'][expParams[i]]['type']):
 					self.__errorHandler__(ctx,"Type of arguments mismatch")
-				else:
-					tac.append(argProvided[i]['name'],'','__arg'+str(i)+'_','')
+			# need to traverse the list of children because C calling convention
+			# pushes the arguments to the callee onto the stack of callee
+			# the arguments must be put in the stack in the reverse order
+			argSize = 0
+			for arg in reversed(argProvided):
+				# op1 is the temporary containing the argument
+				# op2 of the tac is the size of the type of argument
+				# op2 will be needed for updating the stack pointer
+				tac.append(arg['name'],'',':param:','=')
+				argSize += self.__getSize__(arg['type'])
+				# for this 3AC, the caller should push this argument onto the stack
 			tac.append('','',symbol,'function')
+			# note that the instruction "call" automatically puts the return address on the new stack
+			# after control returns to the caller on the next instruction, it must pop the arguments
+			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp by arg_size
+			tac.append(argSize,'','','pop')
 		else:
 			self.__errorHandler__(ctx,"Method Invocation not supported")
 		return {'name':':r:','type':methodInfo['type'],
