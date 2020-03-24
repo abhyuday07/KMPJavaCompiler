@@ -1245,19 +1245,19 @@ class myParseTreeVisitor(java8Visitor):
 					# move first 6 arguments into the argument registers
 					# %edi, %esi, %edx, %ecx, %r8d, %r9d
 					# if there are more arguments, then push them onto the stack
-					f.write("push\t" + op1)
+					f.write("push\t" + op1 + '\n')
 				elif (operator == "call"):
 					# transfer control to the callee
-					f.write("call\t" + dest)
+					f.write("call\t" + dest + '\n')
 				elif (operator == "function"):
 					# create function label
 					f.write(dest + ":\n")
 					# save caller's rbp onto the stack
-					f.write("\t\tpushq\t%rbp")
+					f.write("\t\tpushq\t%rbp\n")
 					# move the current rsp to rbp 
-					f.write("\t\tmovq\t%rsp, %rbp")
+					f.write("\t\tmovq\t%rsp, %rbp\n")
 					# create stack space of 100 bytes
-					f.write("\t\tsubq\t%rsp, $100")
+					f.write("\t\tsubq\t%rsp, $100\n")
 					# allocate stack space for local variables
 					# print("sub esp size")
 					# access first parameter to the function
