@@ -617,7 +617,7 @@ class myParseTreeVisitor(java8Visitor):
 						# varInfo['value'] = var['value']
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
-							print(var,localVariableInfo)
+							# print(var,localVariableInfo)s
 							self.__typecheck__(var['value']['type'],localVariableInfo['type'])
 							tac.append(var['value']['name'],None,varIdentifier,'=')
 		#TODO:to be done while implementing typecasting. check and cast types appropriately.
@@ -1441,8 +1441,8 @@ class myParseTreeVisitor(java8Visitor):
 		return self.__handleMethods__(ctx)
 
 	def printSymbolTable(self):
-		print(symTable.scope_lookup)
-		print(symTable.temp_to_type)
+		print(json.dumps(symTable.scope_lookup, indent = 4))
+		print(json.dumps(symTable.temp_to_type, indent = 4))
 		dot = Digraph(comment="Symbol Table")
 		for i in range(0,len(symTable.scopes)):
 			dot.node(str(i),json.dumps(symTable.scopes[i],indent=4))

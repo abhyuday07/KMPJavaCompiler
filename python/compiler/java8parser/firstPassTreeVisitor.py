@@ -159,7 +159,7 @@ class firstPassTreeVisitor(java8Visitor):
 				pass
 			if(isinstance(child,self.parser.FormalParameterContext)):
 				fpIdentifier, fpInfo = self.visitFormalParameter(child)
-				print(fpIdentifier)
+				# print(fpIdentifier)
 				fpDict[fpIdentifier] = fpInfo
 		return fpDict
 
