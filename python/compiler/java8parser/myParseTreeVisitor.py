@@ -372,12 +372,24 @@ class myParseTreeVisitor(java8Visitor):
 		'''
 		 methodDeclaration : modifier* methodHeader methodBody
 		'''
+		methodIdentifier = None
+		methodInfo = {
+			'modifiers': [],
+			'type': {
+				'base': None,
+				'dims': 0
+			},
+			'parameters': None
+		}
 		children = self.__getChildren__(ctx)
 		for child in children:
 			if(isinstance(child,self.parser.ModifierContext)):
 				pass
 			elif(isinstance(child,self.parser.MethodHeaderContext)):
-				pass
+				methodIdentifier , methodInfo['type'] , methodInfo['parameters'] = self.visitMethodHeader(child)
+				tac.append('', '', methodIdentifier, 'function')
+				# the above 3AC indicates that a function definition is starting
+				# might also need to insert the parameters into tac
 			elif(isinstance(child,self.parser.MethodBodyContext)):
 				symTable.invokeScope(ctx)
 				self.visitMethodBody(child)
@@ -1215,28 +1227,43 @@ class myParseTreeVisitor(java8Visitor):
 				args.append(exprInfo)
 		return args
 
-	def __handleRuntime(self):
-		# generate assembly code for NASM using tac
+	def __handleRuntime__(self):
+		# generate assembly code for GNU Assembly (GAS) using tac
 		# ensure that tac is self-sufficient and during runtime code generation
 		# you don't use any structures other than tac
-		for instr in tac.code:
-			op1, op2, dest, operator = instr
-			# handling function call
-			if (operator == ":param:"):
-				# a function call must be starting
-				print("push " + op1)
-			elif (operator == "function"):
-				# transfer control to the callee
-				print("call " + op1)
-			# elif (operator == "method declaration"):
-				# print("op1: push ebp")
-				# print("mov ebp, esp")
-				# allocate stack space for local variables
-				# print("sub esp size")
-				# access first parameter to the function
-				# print("mov ebx [ebp+8]")
-				# access second parameter to the function
-				# print("mov ebx [ebp+12]")
+		text = []
+		# text stores the ascii texts for .text section
+		with open("test.s", 'w') as f:
+			f.write('\t\t.global _start\n\n')
+			f.write('\t\t.text\n')
+			for instr in tac.code:
+				op1, op2, dest, operator = instr
+				# handling function call
+				if (dest == ":param:"):
+					# a function call must be starting
+					# push the arguments into the registers and stack
+					# move first 6 arguments into the argument registers
+					# %edi, %esi, %edx, %ecx, %r8d, %r9d
+					# if there are more arguments, then push them onto the stack
+					f.write("push\t" + op1)
+				elif (operator == "call"):
+					# transfer control to the callee
+					f.write("call\t" + dest)
+				elif (operator == "function"):
+					# create function label
+					f.write(dest + ":\n")
+					# save caller's rbp onto the stack
+					f.write("\t\tpushq\t%rbp")
+					# move the current rsp to rbp 
+					f.write("\t\tmovq\t%rsp, %rbp")
+					# create stack space of 100 bytes
+					f.write("\t\tsubq\t%rsp, $100")
+					# allocate stack space for local variables
+					# print("sub esp size")
+					# access first parameter to the function
+					# print("mov ebx [ebp+8]")
+					# access second parameter to the function
+					# print("mov ebx [ebp+12]")
 
 
 	def __handleMethods__(self,ctx):
@@ -1276,7 +1303,7 @@ class myParseTreeVisitor(java8Visitor):
 				tac.append(arg['name'],'',':param:','=')
 				argSize += self.__getSize__(arg['type'])
 				# for this 3AC, the caller should push this argument onto the stack
-			tac.append('','',symbol,'function')
+			tac.append('','',symbol,'call')
 			# note that the instruction "call" automatically puts the return address on the new stack
 			# after control returns to the caller on the next instruction, it must pop the arguments
 			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp by arg_size
@@ -1316,7 +1343,7 @@ class myParseTreeVisitor(java8Visitor):
 				tac.append(arg['name'],'',':param:','=')
 				argSize += self.__getSize__(arg['type'])
 				# for this 3AC, the caller should push this argument onto the stack
-			tac.append('','',symbol,'function')
+			tac.append('','',symbol,'call')
 			# note that the instruction "call" automatically puts the return address on the new stack
 			# after control returns to the caller on the next instruction, it must pop the arguments
 			# it had pushed onto the stack for the callee, to directy do so, simply increase rsp by arg_size
