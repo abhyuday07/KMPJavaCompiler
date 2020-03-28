@@ -4,8 +4,7 @@ from java8parser.java8Parser import java8Parser
 # from java8parser.java8Visitor import java8Visitor
 from java8parser.myParseTreeVisitor import myParseTreeVisitor
 from graphviz import Digraph
-
-
+from java8parser.runtimeHandler import runtimeHandler
 
 class AST_Node():
 	# static variable num_nodes to count the number of nodes
@@ -143,6 +142,7 @@ def main():
 	visitor.visit(tree)
 	visitor.printSymbolTable()
 	visitor.printTAC()
+	runtimeHandler(visitor.tac)
 	# except Exception as e:
 		# print(e)
 	# AST_root = createAST(tree, None)
