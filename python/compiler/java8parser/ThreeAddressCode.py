@@ -11,15 +11,30 @@ class ThreeAddressCode:
 	'''
 	TAC format: [op1, op2, dest, operator]
 	Labels, identifiers etc are stored as string. Integers (immediate operands) stored as integer.
-	Operators: '+', '-', 'neg' (negation), 'goto', 'label', 'function'
-	Operators which can have multiple types of operands will have additional information seperated by colons.
 	Examples:
 	'+:int', '-:long', '=:boolean'.
 	a <- b+c === [b,c,a,+] .
 	goto L1 === ['', '', 'L1', 'goto']
-	label: L1 === ['','', 'L1', 'label']  (Used in backpatching.)
 	function: myfunc === ['', '', myfunc, 'function'] (Used in assembly generation)
-	  
+	Supported instructions:
+	=:<type> (boolean, int, long, float, double, pointer(treat as int))
+	*, +, -, /, % :<type>
+	<<:type (leftshift), >>:type (rightshift) >>>(unsigned right shift)
+	&:<type> bitwise and
+	|:<type> bitwise or
+	^:<type> bitwise xor
+	neg:<type> (int,float,long,double) (stores negation of op1 into dest)
+	complement:<type> (int, long) bitwise complement '~'.
+	invert:boolean inverts a boolean
+	<:<type> (result type is boolean. op1=lhs, op2=rhs, dest=result
+	<= > >= != == similar to above
+	store:<type> op1=temporary value stored, dest=address where value has to be stored.
+	load:<type> op1=address to be loaded. dest=temporary in which value is copied.
+	goto
+	ret
+	function
+	call
+	pop
 	'''
 	def __init__(self):
 		self.labels = 0 #Number of labels

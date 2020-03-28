@@ -1345,7 +1345,7 @@ class myParseTreeVisitor(java8Visitor):
 				true_idx.append(self.tac.append('','','',lhs['name']))
 			else:
 				temp = symTable.getTemporary({'base':'boolean','dims':0})
-				self.tac.append(temp,'',lhs['name'],'!:boolean')
+				self.tac.append(lhs['name'],'', temp, 'invert:boolean')
 				false_idx.append(self.tac.append('','','',lhs['name']))
 			rhs = children[2].accept(self)
 			if(rhs['type']['base'] != 'boolean' or rhs['type']['dims'] != 0):
