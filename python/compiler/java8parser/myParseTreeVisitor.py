@@ -363,6 +363,7 @@ class myParseTreeVisitor(java8Visitor):
 			if(isinstance(child,self.parser.ModifierContext)):
 				pass
 			elif(self.__isIdentifier__(child)):
+				tac.genLabel(className=symTable.ctx_to_name[id(ctx)])
 				pass
 			elif(isinstance(child,self.parser.ClassBodyContext)):
 				symTable.invokeScope(ctx)
@@ -387,8 +388,9 @@ class myParseTreeVisitor(java8Visitor):
 			if(isinstance(child,self.parser.ModifierContext)):
 				pass
 			elif(isinstance(child,self.parser.MethodHeaderContext)):
-				methodIdentifier , methodInfo['type'] , methodInfo['parameters'] = self.visitMethodHeader(child)
-				tac.append('', '', methodIdentifier, 'function')
+				# methodIdentifier , methodInfo['type'] , methodInfo['parameters'] = self.visitMethodHeader(child)
+				# tac.append('', '', methodIdentifier, 'function')
+				tac.genLabel(funcName=symTable.ctx_to_name[id(ctx)])
 				# the above 3AC indicates that a function definition is starting
 				# might also need to insert the parameters into tac
 			elif(isinstance(child,self.parser.MethodBodyContext)):
@@ -1498,6 +1500,7 @@ class myParseTreeVisitor(java8Visitor):
 		dot.render('graph',view=True)
 
 	def printTAC(self):
+		print(json.dumps(tac.label_to_functions,indent=4))
 		print('Sno\t\tlabel\t\top1\t\top2\t\tdest\t\toperator')
 		idx_to_label = {}
 		for i in range(0,tac.labels):

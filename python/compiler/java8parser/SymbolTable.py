@@ -24,6 +24,7 @@ class SymbolTable:
         self.node_to_table = {}
         self.string_constants = []
         self.temp_to_type = {}
+        self.ctx_to_name = {}
 
     def addSymbol(self, symbol_type, symbol_name, symbol_details):
         assert(symbol_type in ["variables", "methods", "classes"])
@@ -52,6 +53,7 @@ class SymbolTable:
         if(className):
             self.scope_lookup[str(className)+':'+str(self.curr_scope)] = self.next_scope
         if(addScopeLookup):
+            self.ctx_to_name[id(addScopeLookup)] = className
             self.node_to_table[id(addScopeLookup)] = self.next_scope
         self.curr_scope = self.next_scope
         self.next_scope += 1

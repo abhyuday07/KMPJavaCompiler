@@ -27,13 +27,33 @@ class ThreeAddressCode:
 		self.label_to_idx = {}
 		self.idx_to_label = {}
 		self.idx_to_comments = {}
+		self.label_to_functions = {}
+		self.current_class = None
 	
-	def genLabel(self): #Generates new label
+	def genLabel(self,funcName = None,className = None): #Generates new label
 		if(len(self.code) in self.idx_to_label):
 			return self.idx_to_label[len(self.code)]
 		newLabel = "L" + str(self.labels)
 		self.label_to_idx[newLabel] = len(self.code)
 		self.idx_to_label[len(self.code)] = newLabel
+		'''
+		# Will create a dictionary for classes and methods and their label
+		# Eg class starts as L0 and class.func1 starts at L1 and class.func2 starts at L3
+		Then 
+		label_to_functions = {
+			"class" : {
+				":start:" : "L0",
+				"func1" : "L1",
+				"func2" : "L2"
+			}
+		}
+		'''
+		if className is not None:
+			self.label_to_functions[className] = {}
+			self.label_to_functions[className][':start:'] = newLabel
+			self.current_class = className
+		if funcName is not None:
+			self.label_to_functions[self.current_class][funcName] = newLabel
 		self.labels += 1
 		return newLabel
   

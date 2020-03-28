@@ -88,7 +88,7 @@ class firstPassTreeVisitor(java8Visitor):
 				self.symTable.addSymbol('methods',methodIdentifier,methodInfo)
 
 			elif(isinstance(child,self.parser.MethodBodyContext)):
-				self.symTable.createNewScope(addScopeLookup=ctx)
+				self.symTable.createNewScope(addScopeLookup=ctx,className=methodIdentifier)
 				self.visitMethodBody(child)
 				self.symTable.closeCurrScope()
 		return
