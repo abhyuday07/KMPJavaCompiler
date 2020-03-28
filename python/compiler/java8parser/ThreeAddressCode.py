@@ -12,7 +12,9 @@ class ThreeAddressCode:
 	TAC format: [op1, op2, dest, operator]
 	Labels, identifiers etc are stored as string. Integers (immediate operands) stored as integer.
 	Operators: '+', '-', 'neg' (negation), 'goto', 'label', 'function'
+	Operators which can have multiple types of operands will have additional information seperated by colons.
 	Examples:
+	'+:int', '-:long', '=:boolean'.
 	a <- b+c === [b,c,a,+] .
 	goto L1 === ['', '', 'L1', 'goto']
 	label: L1 === ['','', 'L1', 'label']  (Used in backpatching.)

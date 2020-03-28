@@ -147,12 +147,12 @@ class myParseTreeVisitor(java8Visitor):
 		if('true_list' in exprInfo and len(exprInfo['true_list']) > 0):
 			true_label = tac.genLabel()
 			tac.backpatch(exprInfo['true_list'],true_label)
-			tac.append('True','',exprInfo['name'],'=')
+			tac.append('true','',exprInfo['name'],'=:boolean')
 			next_idx.append(tac.append('','','','goto'))
 		if('false_list' in exprInfo and len(exprInfo['false_list']) > 0):
 			false_label = tac.genLabel()
 			tac.backpatch(exprInfo['false_list'],false_label)
-			tac.append('False','',exprInfo['name'],'=')
+			tac.append('false','',exprInfo['name'],'=:boolean')
 			next_idx.append(tac.append('','','','goto'))
 		next_label = tac.genLabel()
 		tac.backpatch(next_idx,next_label)
@@ -334,7 +334,8 @@ class myParseTreeVisitor(java8Visitor):
 		if(len(children) == 3):
 			exprInfo = self.visitExpression(children[1])
 			self.__handleShortCircuit__(exprInfo)
-			tac.append(exprInfo['name'],'',':r:','=')
+			assignmentType = 'pointer' if exprInfo['type']['dims'] > 0 else exprInfo['type']['base']
+			tac.append(exprInfo['name'],'',':r:','=:' + assignmentType)
 			tac.append('','','','ret')
 		else:
 			tac.append('','','','ret')
@@ -631,8 +632,9 @@ class myParseTreeVisitor(java8Visitor):
 						if 'value' in var:
 							# print(var,localVariableInfo)s
 							self.__typecheck__(var['value']['type'],localVariableInfo['type'])
-							tac.append(var['value']['name'],None,varIdentifier,'=')
-		#TODO:to be done while implementing typecasting. check and cast types appropriately.
+							#TODO: Add typecasting information in here. Idea: From base assignments, also return the type of rhs. Then typecast (if necessary) into a new temporary. Then do the assignment.
+							assignmentType = 'pointer' if localVariableInfo['type']['dims'] > 0 else localVariableInfo['type']['base']
+							tac.append(var['value']['name'],None,varIdentifier,'=:'+assignmentType)
 		return
 	
 	def visitVariableInitializerList(self, ctx:java8Parser.VariableInitializerListContext):
@@ -661,32 +663,34 @@ class myParseTreeVisitor(java8Visitor):
 		# creates an array of ptype[dims[0]][dims[1]]...
 		if(len(dims) == 0):
 			size = self.__getSize__(ptype)
-			tac.append(size,'',':param1:','=')
+			tac.append(size,'',':param1:','=:int')
 			tac.append('','','malloc','function')
 			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']}}
 		elif(len(dims) == 1):
 			size = symTable.getTemporary({'base':'int','dims':0})
-			tac.append(dims[0],self.__getSize__(ptype),size,'*')
-			tac.append(size,'',':param1:','=')
+			tac.append(dims[0],self.__getSize__(ptype),size,'*:int')
+			tac.append(size,'',':param1:','=:int')
 			tac.append('','','malloc','function')
 			return {'name':':r:', 'type':{'base':ptype['base'],'dims':ptype['dims']+1}}
 		else:
 			# everything in byte
+			#TODO: Iss function main =:<assignmentType> confirm krdo @Pandey.
+			# Keeping =:int as we assuming x86 is 32-bit architecture. net-informations.com/q/mis/x86.html
 			size = symTable.getTemporary({'base':'int','dims':0})
-			tac.append(dims[0],self.__getSize__({'dims':1}),size,'*')
-			tac.append(size,'',':param1:','=')
+			tac.append(dims[0],self.__getSize__({'dims':1}),size,'*:int')
+			tac.append(size,'',':param1:','=:int')
 			tac.append('','','malloc','function')
 			temp_reg = symTable.getTemporary({'base':ptype['base'],'dims': ptype['dims']+len(dims)})
-			tac.append(':r:','',temp_reg,'=')
+			tac.append(':r:','',temp_reg,'=:int')
 			temp_reg_total = symTable.getTemporary({'base':ptype['base'],'dims': ptype['dims']+len(dims)})
-			tac.append(temp_reg,size,temp_reg_total,'+')
+			tac.append(temp_reg,size,temp_reg_total,'+int')
 			jump_label = tac.genLabel()
 			bool_reg_total = symTable.getTemporary({'base':'boolean','dims':0})
-			tac.append(temp_reg,temp_reg_total,bool_reg_total,'<')
+			tac.append(temp_reg,temp_reg_total,bool_reg_total,'<:int')
 			jump_idx = tac.append('','','',bool_reg_total)
 			allocInfo = self.__recursiveAlloc__(dims[1:],ptype)
-			tac.append(temp_reg,self.__getSize__({'dims':1}),temp_reg,'+')
-			tac.append(allocInfo['name'],'',temp_reg,'store')
+			tac.append(temp_reg,self.__getSize__({'dims':1}),temp_reg,'+int')
+			tac.append(allocInfo['name'],'',temp_reg,'store:int')
 			tac.append('','',jump_label,'goto')
 			tac.backpatch([jump_idx],tac.genLabel())
 			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']+len(dims)}}
@@ -870,7 +874,9 @@ class myParseTreeVisitor(java8Visitor):
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
 							self.__typecheck__(var['value']['type'],varInfo['type'])
-							tac.append(var['value']['name'],None,varIdentifier,'=')
+							#TODO: Typecasting in assignment.
+							assignmentType = 'pointer' if varInfo['type']['dims'] > 0 else varInfo['type']['base']
+							tac.append(var['value']['name'],None,varIdentifier,'=:' + assignmentType)
 		return
 
 	# Visit a parse tree produced by java8Parser#unaryExpression.
@@ -896,7 +902,7 @@ class myParseTreeVisitor(java8Visitor):
 				if c['type']['dims'] != 0 or c['type']['base'] not in ['float', 'double', 'long', 'int']:
 					self.__errorHandler__(ctx,"- defined only for int, long, float and double")
 				temp = symTable.getTemporary(c['type'])
-				tac.append(c['name'], None, temp, 'neg')
+				tac.append(c['name'], None, temp, 'neg:' + c['type']['base'])
 				return {'name':temp, 'type':c['type'],'true_list': [], 'false_list':[]}
 			else: # Rule 3
 				return self.visitUnaryExpression(children[1])
@@ -912,7 +918,7 @@ class myParseTreeVisitor(java8Visitor):
 		c = self.visitUnaryExpression(children[1])
 		if c['type']['dims'] != 0 or c['type']['base'] not in ['long', 'float', 'int', 'double']:
 			self.__errorHandler__(ctx,"++ defined only for int, long, float and double")
-		tac.append(c['name'],1,c['name'],'+')
+		tac.append(c['name'],1,c['name'],'+:' + c['type']['base'])
 		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#preDecrementExpression.
@@ -925,7 +931,7 @@ class myParseTreeVisitor(java8Visitor):
 		c = self.visitUnaryExpression(children[1])
 		if c['type']['dims'] != 0 or c['type']['base'] not in ['long', 'float', 'int', 'double']:
 			self.__errorHandler__(ctx,"++ defined only for int, long, float and double")
-		tac.append(c['name'],1,c['name'],'-')
+		tac.append(c['name'],1,c['name'],'-:' + c['type']['base'])
 		return {'name': c['name'], 'type':c['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#postIncrementExpression.
@@ -937,8 +943,8 @@ class myParseTreeVisitor(java8Visitor):
 		child = self.__getChildren__(ctx)[0]
 		childResult = self.visitPostfixExpression(child)
 		tempname = symTable.getTemporary(childResult['type'])
-		tac.append(childResult['name'], None, tempname, '=' )
-		tac.append(childResult['name'], 1, childResult['name'], '+' )
+		tac.append(childResult['name'], None, tempname, '=:' + childResult['type']['base'] )
+		tac.append(childResult['name'], 1, childResult['name'], '+:' + childResult['type']['base'] )
 		return {'name':tempname, 'type':childResult['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#postDecrementExpression.
@@ -950,8 +956,8 @@ class myParseTreeVisitor(java8Visitor):
 		child = self.__getChildren__(ctx)[0]
 		childResult = self.visitPostfixExpression(child)
 		tempname = symTable.getTemporary(childResult['type'])
-		tac.append(childResult['name'], None, tempname, '=' )
-		tac.append(childResult['name'], 1, childResult['name'], '-' )
+		tac.append(childResult['name'], None, tempname, '=:' + childResult['type']['base'] )
+		tac.append(childResult['name'], 1, childResult['name'], '-:' + childResult['type']['base'] )
 		return {'name':tempname, 'type':childResult['type'],'true_list': [], 'false_list':[]}
 
 	# Visit a parse tree produced by java8Parser#postfixExpression.
@@ -989,11 +995,11 @@ class myParseTreeVisitor(java8Visitor):
 		if children[0].getText() == '~':
 			if c['type']['dims'] != 0 or c['type']['base'] not in ['int', 'long']:
 				self.__errorHandler__(ctx,"~ defined only for int, long")
-			tac.append(c['name'], None, temp, 'complement') #Bitwise complement of an integer ~
+			tac.append(c['name'], None, temp, 'complement:' + c['type']['base']) #Bitwise complement of an integer ~
 		else:
 			if c['type']['dims'] != 0 or c['type']['base'] != 'boolean':
-				self.__errorHandler__(ctx,"~ defined only for boolean")
-			tac.append(c['name'], None, temp, 'invert') #Boolean invert
+				self.__errorHandler__(ctx,"! defined only for boolean")
+			tac.append(c['name'], None, temp, 'invert:boolean') #Boolean invert
 		return {'name': temp, 'type': c['type'],'true_list': [], 'false_list':[]}
 
 
@@ -1014,29 +1020,28 @@ class myParseTreeVisitor(java8Visitor):
 
 		p = self.__visitChildren__(ctx)
 		self.__handleShortCircuit__(p[2])
+		commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
+		assignmentType = 'pointer' if commonType['dims'] > 0 else commonType['base']
 		#TODO: How to handle field accesses. Now handled only 'name' and 'arrayAccess'.
+		#TODO Typecasting.
 		if isinstance(ctx.getChild(0).getChild(0), self.parser.ArrayAccessContext):
-			commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
 			if not commonType:
 				self.__errorHandler__(ctx,"Types don't match")
 			temp = symTable.getTemporary(commonType) #to store the new value
 			if(p[1]['operator'] == '='):
-				tac.append(p[2]['name'], None,temp, '=')
+				tac.append(p[2]['name'], None,temp, '=:' + assignmentType)
 			else:
 				oldValue = symTable.getTemporary(p[0]['type'])
-				tac.append(p[0]['name'], None, oldValue, 'load')
-				tac.append( oldValue, p[2]['name'],temp, p[1]['operator'][:-1])
-			tac.append(temp, None, p[0]['name'], 'store') # p[0]['name'] stores the address and temp stores the value to be stored.
+				tac.append(p[0]['name'], None, oldValue, 'load:'+assignmentType)
+				tac.append( oldValue, p[2]['name'],temp, p[1]['operator'][:-1] + ':' + assignmentType)
+			tac.append(temp, None, p[0]['name'], 'store:' + assignmentType) # p[0]['name'] stores the address and temp stores the value to be stored.
 			return {'type': commonType, 'name': temp, 'true_list': [], 'false_list': []}
 		elif isinstance(ctx.getChild(0).getChild(0), self.parser.NameContext):
-			commonType = self.__typecheck__(p[0]['type'], p[2]['type'])
 			if(p[1]['operator'] == '='):
-				tac.append(p[2]['name'], None, p[0].get('name'), '=')
+				tac.append(p[2]['name'], None, p[0].get('name'), '=:' + assignmentType)
 			else:
-				tac.append( p[0].get('name'), p[2]['name'],p[0].get('name'), p[1]['operator'][:-1])
+				tac.append( p[0].get('name'), p[2]['name'],p[0].get('name'), p[1]['operator'][:-1] + ':' + assignmentType)
 			return {'type': commonType, 'name':p[0].get('name'), 'true_list': [], 'false_list' : []}
-	
-			
 
 	# Visit a parse tree produced by java8Parser#assignmentOperator.
 	def visitAssignmentOperator(self, ctx:java8Parser.AssignmentOperatorContext):
@@ -1155,32 +1160,32 @@ class myParseTreeVisitor(java8Visitor):
 		if childType == java8Lexer.IntegerLiteral:
 			if text[-1] == 'l' or text[-1] == 'L': #long
 				temp = symTable.getTemporary({'base':'long', 'dims': 0})
-				tac.append(int(text[:-1]), None, temp, '=') #Wishlist: Assuming only integer literals. Binary,octal and hex not handled.
+				tac.append(text[:-1], None, temp, '=:long') #Wishlist: Assuming only integer literals. Binary,octal and hex not handled.
 				return {'name' : temp, 'type': {'base':'long', 'dims': 0}}
 			else:
 				temp = symTable.getTemporary({'base':'int', 'dims': 0})
-				tac.append(int(text), None, temp, '=')
+				tac.append(text, None, temp, '=:int')
 				return {'name' : temp, 'type': {'base':'int', 'dims': 0}}
 		elif childType == java8Lexer.FloatingPointLiteral:
 			if text[-1] == 'f' or text[-1] == 'F': #float
 				temp = symTable.getTemporary({'base':'float', 'dims': 0})
-				tac.append(float(text[:-1]), None, temp, '=') 
+				tac.append(text[:-1], None, temp, '=:float') 
 				return {'name' : temp, 'type': {'base':'float', 'dims': 0}}
 			else:
 				temp = symTable.getTemporary({'base':'double', 'dims': 0})
-				tac.append(float(text), None, temp, '=')
+				tac.append(text, None, temp, '=:double')
 				return {'name' : temp, 'type': {'base':'double', 'dims': 0}}
 		elif childType == java8Lexer.BooleanLiteral: 
 			temp = symTable.getTemporary({'base': 'boolean', 'dims': 0})
 			if text == 'true':
-				tac.append(True, None, temp, '=')
+				tac.append('true', None, temp, '=:boolean')
 			else :
-				tac.append(False, None, temp, '=')
+				tac.append('false', None, temp, '=:boolean')
 			return {'type': {'base': 'boolean', 'dims': 0},'name': 'temp', 'true_list': [], 'false_list': []}
 		elif childType == java8Lexer.StringLiteral:
 			temp = symTable.getTemporary({'base':'String', 'dims': 0})
 			str_idx = symTable.addStringConstant(text)
-			tac.append(':str'+str(str_idx)+':', None, temp, '=')
+			tac.append(':str'+str(str_idx)+':', None, temp, '=:String')
 			return {'name' : temp, 'type': {'base':'String', 'dims': 0}}
 		self.__errorHandler__(ctx,"Only integer, float and boolean literals are supported.")
 	
@@ -1300,7 +1305,8 @@ class myParseTreeVisitor(java8Visitor):
 				# op1 is the temporary containing the argument
 				# op2 of the tac is the size of the type of argument
 				# op2 will be needed for updating the stack pointer
-				tac.append(arg['name'],'',':param:','=')
+				assignmentType = 'pointer' if arg['type']['dims'] > 0 else arg['type']['base']
+				tac.append(arg['name'],'',':param:','=:' + assignmentType)
 				argSize += self.__getSize__(arg['type'])
 				# for this 3AC, the caller should push this argument onto the stack
 			tac.append('','',symbol,'call')
@@ -1340,7 +1346,8 @@ class myParseTreeVisitor(java8Visitor):
 				# op1 is the temporary containing the argument
 				# op2 of the tac is the size of the type of argument
 				# op2 will be needed for updating the stack pointer
-				tac.append(arg['name'],'',':param:','=')
+				assignmentType = 'pointer' if arg['type']['dims'] > 0 else arg['type']['base']
+				tac.append(arg['name'],'',':param:','=:' + assignmentType)
 				argSize += self.__getSize__(arg['type'])
 				# for this 3AC, the caller should push this argument onto the stack
 			tac.append('','',symbol,'call')
@@ -1374,12 +1381,12 @@ class myParseTreeVisitor(java8Visitor):
 				true_idx.append(tac.append('','','',lhs['name']))
 			else:
 				temp = symTable.getTemporary({'base':'boolean','dims':0})
-				tac.append(temp,'',lhs['name'],'!')
+				tac.append(temp,'',lhs['name'],'!:boolean')
 				false_idx.append(tac.append('','','',lhs['name']))
 			rhs = children[2].accept(self)
 			if(rhs['type']['base'] != 'boolean' or rhs['type']['dims'] != 0):
 				self.__errorHandler__(ctx,op + " defined only for boolean")
-			tac.append(rhs['name'],'',lhs['name'],op)
+			tac.append(rhs['name'],'',lhs['name'],op + ':boolean')
 			return {'name': lhs['name'], 'type': lhs['type'],'true_list': 
 					true_idx + lhs['true_list'] + rhs['true_list'],
 					'false_list': false_idx + lhs['false_list']+rhs['false_list']}
@@ -1390,13 +1397,13 @@ class myParseTreeVisitor(java8Visitor):
 			if commonType['base'] not in ['int', 'boolean', 'long']:
 				self.__errorHandler__(ctx,op + " defined only for int, long and boolean")
 			temp = symTable.getTemporary(commonType)
-			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			tac.append(p[0]['name'], p[2]['name'], temp, op + ':' + commonType['base'])
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		elif op in ['<', '>', '<=', '>=','==','!=']: #Relational operators
 			if commonType['base'] not in ['int', 'long', 'double', 'float']:
 				self.__errorHandler__(ctx,op + " defined only for int, long and double and float")
 			temp = symTable.getTemporary({'base':'boolean','dims':0})
-			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			tac.append(p[0]['name'], p[2]['name'], temp, op + ':' + commonType['base'])
 			# idx = tac.append('','','',temp)
 			return {'name':temp, 'type': {'base':'boolean','dims':0}, 'true_list': [], 'false_list':[]}
 		elif op == 'instanceof':
@@ -1406,14 +1413,14 @@ class myParseTreeVisitor(java8Visitor):
 			if commonType['base'] not in ['int', 'long']:
 				self.__errorHandler__(ctx,op + " defined only for int and long")
 			temp = symTable.getTemporary(commonType)
-			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			tac.append(p[0]['name'], p[2]['name'], temp, op + ':' + commonType['base'])
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		elif op in ['+', '-', '/', '*', '%']:
 			if commonType['base'] not in ['int', 'long' , 'double', 'float']:
 				self.__errorHandler__(ctx,op + " defined only for int, long, float and double")
 			#May need to send different operators for each type as assembly instructions are diff. Will look at this later.
 			temp = symTable.getTemporary(commonType)
-			tac.append(p[0]['name'], p[2]['name'], temp, op)
+			tac.append(p[0]['name'], p[2]['name'], temp, op + ':' + commonType['base'])
 			return {'name':temp, 'type': commonType, 'true_list': [], 'false_list':[]}
 		assert(False)
 
@@ -1426,13 +1433,14 @@ class myParseTreeVisitor(java8Visitor):
 			return self.visitChildren(ctx)
 
 	# Note about arrays: Array expressions in general are of 2 types, ones ending with __arrayAccess and others ending with __primary.
-	# *__primary non terminals are used to read from arrays, whereas *__arrayAccess NTs are used in assignment.
+	# *__primary non terminals are used to read from arrays, whereas *_tac.append_arrayAccess NTs are used in assignment.
 	# We will handle __primary by copying the memory location into a new temporary and returning the name and type. of the temporary. Type may be a pointer in itself (format below).
 	# __arrayAccess will be handled by returning a pointer to the final location to be pointed. We will then modify the 'leftHandSide' NT to assign the value at the location.
 	def __handleArrayAccessPrimary__(self, ctx):
 		lastPointer = self.__arrayAccessLastPointer__(ctx)
 		temp = symTable.getTemporary({'base' : lastPointer['type']['base'] , 'dims': lastPointer['type']['dims']})
-		tac.append(lastPointer['name'], None, temp, 'load')
+		loadType = 'pointer' if lastPointer['type']['dims'] > 0 else lastPointer['type']['base']
+		tac.append(lastPointer['name'], None, temp, 'load:' + loadType)
 		return {'name': temp, 'type': {'base' : lastPointer['type']['base'] , 'dims': lastPointer['type']['dims']}}
 
 	def __arrayAccessLastPointer__(self, ctx):
@@ -1464,12 +1472,12 @@ class myParseTreeVisitor(java8Visitor):
 			idx_name = p[4*i+2]['name']
 			offset = symTable.getTemporary({'base':'int','dims':0})
 			unitSize = self.__getSize__({'dims':1})
-			tac.append(unitSize, idx_name, offset, '*')
+			tac.append(unitSize, idx_name, offset, '*:int')
 			addr = symTable.getTemporary({'base':p[0]['type']['base'],'dims':p[0]['type']['dims'] - i - 1})
-			tac.append(base, offset, addr, '+')
+			tac.append(base, offset, addr, '+:int')
 			if i < n_dims-1:
 				value = symTable.getTemporary({'base':p[0]['type']['base'],'dims':0})
-				tac.append(addr, None, value, 'load') #load the value at addr and assign to variable 'value'.
+				tac.append(addr, None, value, 'load:pointer') #load the value at addr and assign to variable 'value'.
 				base = value
 		return {'name': addr, 'type': {'base' : p[0]['type']['base'] , 'dims': p[0]['type']['dims']-n_dims}}
 
