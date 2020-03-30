@@ -7,6 +7,7 @@ if __name__ is not None and "." in __name__:
 	from .ThreeAddressCode import ThreeAddressCode, symTable
 	from .firstPassTreeVisitor import firstPassTreeVisitor
 	from .exceptionHandler import exceptionHandler
+	from .utils import __getSize__
 else:
 	from java8Lexer import java8Lexer
 	from java8Parser import java8Parser
@@ -14,6 +15,7 @@ else:
 	from ThreeAddressCode import ThreeAddressCode, symTable
 	from firstPassTreeVisitor import firstPassTreeVisitor
 	from exceptionHandler import exceptionHandler
+	from utils import __getSize__
 import json
 from graphviz import Digraph
 '''
@@ -54,30 +56,6 @@ class myParseTreeVisitor(java8Visitor):
 			return True
 		else:
 			return False
-
-	def __getSize__(self,ttype):
-		'''
-		input : {'base': int/boolean/byte/etc.,'dims':0/1/2.}
-		output : memory reqd for ttype
-		'''
-		if(ttype.get('dims')>0):
-			return 4
-		elif(ttype.get('base') == 'boolean'):
-			return 1
-		elif(ttype.get('base') == 'byte'):
-			return 1
-		elif(ttype.get('base') == 'char'):
-			return 1
-		elif(ttype.get('base') == 'short'):
-			return 2
-		elif(ttype.get('base') == 'int'):
-			return 4
-		elif(ttype.get('base') == 'float'):
-			return 4
-		elif(ttype.get('base') == 'double'):
-			return 8
-		else:
-			return 0
 
 	def __getChildren__(self,ctx,onlyTerminalNodes = False):
 		'''
@@ -629,7 +607,7 @@ class myParseTreeVisitor(java8Visitor):
 						varInfo['offset'] = symTable.offset
 						# either this is a primitive type hence get the size using __getSize__
 						# or this is a reference type, hence only allocate the pointer on the stack
-						symTable.offset += self.__getSize__(varInfo['type'])
+						symTable.offset += __getSize__(varInfo['type'])
 						# varInfo['value'] = var['value']
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
@@ -665,13 +643,13 @@ class myParseTreeVisitor(java8Visitor):
 	def __recursiveAlloc__(self,dims,ptype):
 		# creates an array of ptype[dims[0]][dims[1]]...
 		if(len(dims) == 0):
-			size = self.__getSize__(ptype)
+			size = __getSize__(ptype)
 			self.tac.append(size,'',':param1:','=:int')
 			self.tac.append('','','malloc','function')
 			return {'name':temp_reg, 'type':{'base':ptype['base'],'dims':ptype['dims']}}
 		elif(len(dims) == 1):
 			size = symTable.getTemporary({'base':'int','dims':0})
-			self.tac.append(dims[0],self.__getSize__(ptype),size,'*:int')
+			self.tac.append(dims[0],__getSize__(ptype),size,'*:int')
 			self.tac.append(size,'',':param1:','=:int')
 			self.tac.append('','','malloc','function')
 			return {'name':':r:', 'type':{'base':ptype['base'],'dims':ptype['dims']+1}}
@@ -680,7 +658,7 @@ class myParseTreeVisitor(java8Visitor):
 			#TODO: Iss function main =:<assignmentType> confirm krdo @Pandey.
 			# Keeping =:int as we assuming x86 is 32-bit architecture. net-informations.com/q/mis/x86.html
 			size = symTable.getTemporary({'base':'int','dims':0})
-			self.tac.append(dims[0],self.__getSize__({'dims':1}),size,'*:int')
+			self.tac.append(dims[0],__getSize__({'dims':1}),size,'*:int')
 			self.tac.append(size,'',':param1:','=:int')
 			self.tac.append('','','malloc','function')
 			temp_reg = symTable.getTemporary({'base':ptype['base'],'dims': ptype['dims']+len(dims)})
@@ -692,7 +670,7 @@ class myParseTreeVisitor(java8Visitor):
 			self.tac.append(temp_reg,temp_reg_total,bool_reg_total,'<:int')
 			jump_idx = self.tac.append('','','',bool_reg_total)
 			allocInfo = self.__recursiveAlloc__(dims[1:],ptype)
-			self.tac.append(temp_reg,self.__getSize__({'dims':1}),temp_reg,'+int')
+			self.tac.append(temp_reg,__getSize__({'dims':1}),temp_reg,'+int')
 			self.tac.append(allocInfo['name'],'',temp_reg,'store:int')
 			self.tac.append('','',jump_label,'goto')
 			self.tac.backpatch([jump_idx],self.tac.genLabel())
@@ -872,7 +850,7 @@ class myParseTreeVisitor(java8Visitor):
 						varInfo['offset'] = symTable.offset
 						# either this is a primitive type hence get the size using __getSize__
 						# or this is a reference type, hence only allocate the pointer on the stack
-						symTable.offset += self.__getSize__(varInfo['type']['base'])
+						symTable.offset += __getSize__(varInfo['type']['base'])
 						# varInfo['value'] = var['value']
 						symTable.addSymbol('variables',varIdentifier,varInfo)
 						if 'value' in var:
@@ -1265,13 +1243,13 @@ class myParseTreeVisitor(java8Visitor):
 			# pushes the arguments to the callee onto the stack of callee
 			# the arguments must be put in the stack in the reverse order
 			argSize = 0
-			for arg in reversed(argProvided):
+			for arg in argProvided:
 				# op1 is the temporary containing the argument
 				# op2 of the tac is the size of the type of argument
 				# op2 will be needed for updating the stack pointer
 				assignmentType = 'pointer' if arg['type']['dims'] > 0 else arg['type']['base']
 				self.tac.append(arg['name'],'',':param:','=:' + assignmentType)
-				argSize += self.__getSize__(arg['type'])
+				argSize += __getSize__(arg['type'])
 				# for this 3AC, the caller should push this argument onto the stack
 			self.tac.append('','',symbol,'call')
 			# note that the instruction "call" automatically puts the return address on the new stack
@@ -1306,13 +1284,13 @@ class myParseTreeVisitor(java8Visitor):
 			# pushes the arguments to the callee onto the stack of callee
 			# the arguments must be put in the stack in the reverse order
 			argSize = 0
-			for arg in reversed(argProvided):
+			for arg in argProvided:
 				# op1 is the temporary containing the argument
 				# op2 of the tac is the size of the type of argument
 				# op2 will be needed for updating the stack pointer
 				assignmentType = 'pointer' if arg['type']['dims'] > 0 else arg['type']['base']
 				self.tac.append(arg['name'],'',':param:','=:' + assignmentType)
-				argSize += self.__getSize__(arg['type'])
+				argSize += __getSize__(arg['type'])
 				# for this 3AC, the caller should push this argument onto the stack
 			self.tac.append('','',symbol,'call')
 			# note that the instruction "call" automatically puts the return address on the new stack
@@ -1435,7 +1413,7 @@ class myParseTreeVisitor(java8Visitor):
 		for i in range(n_dims):
 			idx_name = p[4*i+2]['name']
 			offset = symTable.getTemporary({'base':'int','dims':0})
-			unitSize = self.__getSize__({'dims':1})
+			unitSize = __getSize__({'dims':1})
 			self.tac.append(unitSize, idx_name, offset, '*:int')
 			addr = symTable.getTemporary({'base':p[0]['type']['base'],'dims':p[0]['type']['dims'] - i - 1})
 			self.tac.append(base, offset, addr, '+:int')
